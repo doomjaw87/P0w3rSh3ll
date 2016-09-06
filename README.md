@@ -1,4 +1,10 @@
 # P0w3rSh3ll
-Potentionally useful PowerShell scripts
+## Potentionally useful PowerShell scripts
 
-Mainly it's for a place where I can put sanitized PowerShell scripts containing functionality I don't want to forget about.
+This is a repository for PowerShell scripts...
+- Containing functionality I don't want to forget
+- To test and expand my Pester chops
+- For community feedback?
+
+As any good admin would say...
+> "Success is measured in blood; yours or your enemy's."
