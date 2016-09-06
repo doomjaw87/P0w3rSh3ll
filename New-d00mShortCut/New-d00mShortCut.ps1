@@ -64,7 +64,7 @@ Function New-d00mShortCut
                                                                                  $WebDestination)
                 try
                 {
-                    $request = Invoke-WebRequest -Uri $WebDestination
+                    $request = Invoke-WebRequest -Uri $WebDestination -ErrorAction Stop
                     if ($request.StatusCode -eq 200)
                     {
                         $shortcut.TargetPath = $WebDestination
