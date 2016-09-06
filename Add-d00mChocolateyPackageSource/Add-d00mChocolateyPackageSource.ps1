@@ -66,34 +66,54 @@ function Add-d00mChocolateyPackageSource
                 Write-Verbose -Message ('{0}\{1} : {2} : Begin execution' -f $cmdletName, 
                                                                              $PSCmdlet.ParameterSetName, 
                                                                              $computer)
-                $remoteParams = @{ComputerName = $computer}
+                $remoteParams = @{ComputerName = $computer
+                                  ErrorAction  = 'Stop'}
                 if ($Credential -ne $null)
                 {
                     $remoteParams.Add('Credential', $Credential)
                 }
-                Invoke-Command @remoteParams -ScriptBlock {
-                    If (!(Get-PackageProvider -Name chocolatey))
-                    {
-                        $localParams = @{Name         = $args[0]
-                                         ProviderName = $args[0]
-                                         Location     = $args[1]
-                                         Trusted      = $args[2]}
-                        Register-PackageSource @localParams -Force
-                    }
-                    else
-                    {
-                        Write-Warning 'Chocolatey package source already exists!'
-                    }
-                } -ArgumentList $params
+
+                try
+                {
+                    $result = Invoke-Command @remoteParams -ScriptBlock {
+                        If (!(Get-PackageProvider -Name chocolatey))
+                        {
+                            try
+                            {
+                                $localParams = @{Name         = $args[0]
+                                                 ProviderName = $args[0]
+                                                 Location     = $args[1]
+                                                 Trusted      = $args[2]
+                                                 Force        = $true}
+                                Register-PackageSource @localParams
+                                return $true
+                            }
+                            catch
+                            {
+                                return $false
+                            }
+                        }
+                        else
+                        {
+                            return $true
+                        }
+                    } -ArgumentList $params
+                }
+                catch
+                {
+                    $result = $false
+                }
             }
         }
+
         else
         {
             if (!(Get-PackageProvider -Name chocolatey))
             {
                 $localParams = @{Name         = 'Chocolatey'
                                  ProviderName = 'Chocolatey'
-                                 Location     = 'http://chocolatey.org/api/v2/'}
+                                 Location     = 'http://chocolatey.org/api/v2/'
+                                 Force        = $true}
                 if ($Trusted)
                 {
                     $localParams.Add('Trusted', $true)
@@ -102,8 +122,24 @@ function Add-d00mChocolateyPackageSource
                 {
                     $localParams.Add('Trusted', $false)
                 }
+
+                try
+                {
+                    Register-PackageSource @localParams
+                    $result = $true
+                }
+                catch
+                {
+                    $result = $false
+                }
+            }
+            else
+            {
+                $result = $true
             }
         }
+
+        Write-Output $result
     }
 
     end
