@@ -6,4 +6,8 @@ Describe "Test-Pester01" {
     It "outputs 'Sup World!'" {
         Test-Pester01 | should be 'Sup world!'
     }
+
+    It "only says 'Sup World!'" {
+        Test-Pester01 | should not be 'anything else'
+    }
 }

@@ -33,7 +33,11 @@ Function New-d00mShortCut
 
 		#Local filesystem path of the shortcut to be created
 		[parameter(mandatory)]
-		[string]$FilePath
+		[string]$FilePath,
+
+        #Overwrite any pre-existing files
+        [parameter()]
+        [switch]$Force
 	)
 
 	begin
@@ -47,60 +51,88 @@ Function New-d00mShortCut
 
 	process
 	{
-        Write-Verbose -Message ('{0}\{1} : Ensuring {2} does not already exist' -f $cmdletName,
-                                                                                   $PSCmdlet.ParameterSetName,
-                                                                                   $FilePath)
-        if (!(Test-Path -Path $FilePath))
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortCut($FilePath)
+
+        if ($PSCmdlet.ParameterSetName -eq 'webshortcut')
         {
-            $shell = New-Object -ComObject WScript.Shell
-            $shortcut = $shell.CreateShortCut($FilePath)
-            Write-Verbose -Message ('{0}\{1} : Ensuring {2} does not already exist successful' -f $cmdletName,
-                                                                                                  $PSCmdlet.ParameterSetName,
-                                                                                                  $FilePath)
-            if ($PSCmdlet.ParameterSetName -eq 'webshortcut')
+            Write-Verbose -Message ('{0}\{1} : Checking URL validity {2}' -f $cmdletName,
+                                                                             $PScmdlet.ParameterSetName,
+                                                                             $WebDestination)
+            $shortcut.TargetPath = $WebDestination
+            try
             {
-                Write-Verbose -Message ('{0}\{1} : Checking URL validity {2}' -f $cmdletName,
-                                                                                 $PScmdlet.ParameterSetName,
-                                                                                 $WebDestination)
-                try
+                $request = Invoke-WebRequest -Uri $WebDestination -ErrorAction Stop
+                if ($request.StatusCode -eq 200)
                 {
-                    $request = Invoke-WebRequest -Uri $WebDestination -ErrorAction Stop
-                    if ($request.StatusCode -eq 200)
+                    if (!(Test-Path -Path $FilePath))
                     {
-                        $shortcut.TargetPath = $WebDestination
                         $shortcut.Save()
+                        Write-Output $true
                     }
                     else
                     {
-                        Write-Error -Message ('Could not find {0}' -f $WebDestination)
+                        if ($Force)
+                        {
+                            Remove-Item -Path $FilePath -Force
+                            $shortcut.Save()
+                            Write-Output $true
+                        }
+                        else
+                        {
+                            Write-Warning -Message ('{0} already exists! Use the Force parameter to overwrite this file' -f $FilePath)
+                            Write-Output $true
+                        }
                     }
                 }
-                catch
+                else
                 {
                     Write-Error -Message ('Could not find {0}' -f $WebDestination)
+                    Write-Output $false
+                }
+            }
+            catch
+            {
+                Write-Error -Message ('Could not find {0}' -f $WebDestination)
+                Write-Output $false
+            }
+        }
+
+        else
+        {
+            Write-Verbose -Message ('{0}\{1} : Ensuring {1} exists' -f $cmdletName,
+                                                                       $PSCmdlet.ParameterSetName,
+                                                                       $FileSystemDestination)
+            $shortcut.TargetPath = $FileSystemDestination
+            if (Test-Path -Path $FileSystemDestination)
+            {
+                if (!(Test-Path -Path $FilePath))
+                {
+                    $shortcut.Save()
+                    Write-Output $true
+                }
+                else
+                {
+                    if ($Force)
+                    {
+                        Remove-Item -Path $FilePath -Force
+                        $shortcut.Save()
+                        Write-Output $true
+                    }
+                    else
+                    {
+                        Write-Warning -Message ('{0} already exists! Use the Force parameter to overwrite this file' -f $FilePath)
+                        Write-Output $true                    
+                    }
                 }
             }
             else
             {
-                Write-Verbose -Message ('{0}\{1} : Ensuring {1} exists' -f $cmdletName,
-                                                                           $PSCmdlet.ParameterSetName,
-                                                                           $FileSystemDestination)
-                if (Test-Path -Path $FileSystemDestination)
-                {
-                    $shortcut.TargetPath = $FileSystemDestination
-                    $shortcut.Save()
-                }
-                else
-                {
-                    Write-Error -Message ('{0} does not exist!' -f $FileSystemDestination)
-                }
+                Write-Error -Message ('Could not find {0}!' -f $FileSystemDestination)
+                Write-Output $false
             }
         }
-        else
-        {
-            Write-Error -Message ('{0} already exists!' -f $FilePath)
-        }
-	}
+    }
 
 	end
 	{
