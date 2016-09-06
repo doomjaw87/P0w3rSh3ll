@@ -108,6 +108,8 @@ function Add-d00mChocolateyPackageSource
 
     end
     {
-
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
