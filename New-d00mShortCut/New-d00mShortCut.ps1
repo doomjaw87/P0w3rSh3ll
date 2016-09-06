@@ -7,12 +7,12 @@
 	a shortcut file on the local filesystem.
 
 .EXAMPLE
-	New-d00mShortCut -Destination 'https://www.google.com' -FilePath 'c:\Google.lnk'
+	New-d00mShortCut -WebDestination 'https://www.google.com' -FilePath 'c:\Google.lnk'
 
 	This example creates a shortcut to the webpage in the c:\ drive.
 
 .EXAMPLE
-	New-d00mShortCut -Destination 'c:\windows\system32\WindowsPowerShell\v1.0\PowerShell.exe' -FilePath 'c:\Users\Public\Desktop\PowerShell.lnk'
+	New-d00mShortCut -FileSystemDestination 'c:\windows\system32\WindowsPowerShell\v1.0\PowerShell.exe' -FilePath 'c:\Users\Public\Desktop\PowerShell.lnk'
 
 	This example creates a shortcut to the PowerShell.exe in the public user's desktop directory.
 	(Which may be something you don't want to do...)
@@ -23,12 +23,16 @@ Function New-d00mShortCut
 	[cmdletbinding()]
 	param
 	(
-		#Destination of the shortcut file to be created
-		[parameter(mandatory, position=0)]
-		[string]$Destination,
+		#Web Destination of the shortcut file to be created
+		[parameter(mandatory, ParameterSetName='webshortcut')]
+		[string]$WebDestination,
+        
+        #Filesystem destination of the shortcut file to be created
+        [parameter(mandatory, parametersetname='filesystemshortcut')]
+        [string]$FileSystemDestination,
 
 		#Local filesystem path of the shortcut to be created
-		[parameter(mandatory, position=1)]
+		[parameter(mandatory)]
 		[string]$FilePath
 	)
 
@@ -36,23 +40,77 @@ Function New-d00mShortCut
 	{
 		$cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
 		$start      = Get-Date
-		Write-Verbose -Message ('{0} : {1} : Begin process' -f $cmdletName, $start)
+		Write-Verbose -Message ('{0}\{1} : {2} : Begin process' -f $cmdletName, 
+                                                                   $PSCmdlet.ParameterSetName, 
+                                                                   $start)
 	}
 
 	process
 	{
-		Write-Verbose -Message ('{1} : Destination : {1}' -f $cmdletName, $Destination)
-		$shell = New-Object -ComObject WScript.Shell
-		$shortcut = $shell.CreateShortCut("$FilePath")
-		$shortcut.TargetPath = "$Destination"
-		$shortcut.Save()
+        Write-Verbose -Message ('{0}\{1} : Ensuring {2} does not already exist' -f $cmdletName,
+                                                                                   $PSCmdlet.ParameterSetName,
+                                                                                   $FilePath)
+        if (!(Test-Path -Path $FilePath))
+        {
+            $shell = New-Object -ComObject WScript.Shell
+            $shortcut = $shell.CreateShortCut($FilePath)
+            Write-Verbose -Message ('{0}\{1} : Ensuring {2} does not already exist successful' -f $cmdletName,
+                                                                                                  $PSCmdlet.ParameterSetName,
+                                                                                                  $FilePath)
+            if ($PSCmdlet.ParameterSetName -eq 'webshortcut')
+            {
+                Write-Verbose -Message ('{0}\{1} : Checking URL validity {2}' -f $cmdletName,
+                                                                                 $PScmdlet.ParameterSetName,
+                                                                                 $WebDestination)
+                try
+                {
+                    $request = Invoke-WebRequest -Uri $WebDestination
+                    if ($request.StatusCode -eq 200)
+                    {
+                        $shortcut.TargetPath = $WebDestination
+                        $shortcut.Save()
+                    }
+                    else
+                    {
+                        Write-Error -Message ('Could not find {0}' -f $WebDestination)
+                    }
+                }
+                catch
+                {
+                    Write-Error -Message ('Could not find {0}' -f $WebDestination)
+                }
+            }
+            else
+            {
+                Write-Verbose -Message ('{0}\{1} : Ensuring {1} exists' -f $cmdletName,
+                                                                           $PSCmdlet.ParameterSetName,
+                                                                           $FileSystemDestination)
+                if (Test-Path -Path $FileSystemDestination)
+                {
+                    $shortcut.TargetPath = $FileSystemDestination
+                    $shortcut.Save()
+                }
+                else
+                {
+                    Write-Error -Message ('{0} does not exist!' -f $FileSystemDestination)
+                }
+            }
+        }
+        else
+        {
+            Write-Error -Message ('{0} already exists!' -f $FilePath)
+        }
 	}
 
 	end
 	{
 		$end = Get-Date
-		Write-Verbose -Message ('{0} : {1} : End process' -f $cmdletName, $end)
+		Write-Verbose -Message ('{0}\{1} : {2} : End process' -f $cmdletName, 
+                                                                 $PSCmdlet.ParameterSetName,
+                                                                 $end)
 		$totalruntime = ($end - $start).TotalMilliseconds
-		Write-Verbose -Message ('{0} : Total run time : {1} ms' -f $cmdletName, $totalruntime)
+		Write-Verbose -Message ('{0}\{1} : Total run time : {2} ms' -f $cmdletName, 
+                                                                       $PSCmdlet.ParameterSetName,
+                                                                       $totalruntime)
 	}
 }
