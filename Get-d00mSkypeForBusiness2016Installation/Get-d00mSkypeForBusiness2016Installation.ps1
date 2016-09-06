@@ -31,7 +31,7 @@ function Get-d00mSkypeForBusiness2016Installation
     param
     (
         [parameter(ValueFromPipelineByPropertyName)]
-        [string[]]$computerName = $env:COMPUTERNAME,
+        [string[]]$ComputerName = $env:COMPUTERNAME,
 
         [parameter()]
         [pscredential]$Credential
@@ -71,6 +71,7 @@ function Get-d00mSkypeForBusiness2016Installation
                     }
                 }
             }
+
             $props = @{ComputerName = $computer}
             if ($result)
             {
