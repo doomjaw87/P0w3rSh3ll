@@ -52,3 +52,19 @@ $body = @{Subject = 'Testing again'
           ShowAs = 'Busy'}
 
 Invoke-RestMethod -Uri $uri -Method Post -Body (Convertto-Json $body -Depth 100) -Credential $creds -ContentType 'application/json' -Verbose
+
+
+
+# Create new calendar
+#$creds = Get-Credential
+#$uri  = "https://outlook.office365.com/api/v1.0/users/notifications@teamfrontera.com/calendars"
+#$uri  = "https://outlook.office365.com/api/v1.0/me/calendars"
+#$body = [ordered]@{Name = 'Testing2'}
+#$body = $(ConvertTo-Json -InputObject $body -Depth 10)
+#$response = Invoke-RestMethod -Method Post -Uri $uri -Body $body -Credential $creds -ContentType 'application/json'
+
+
+# Get list of calendars
+#$creds = Get-Credential
+#$uri  = 'https://outlook.office365.com/api/v1.0/me/calendars'
+#$calendars = Invoke-RestMethod -Uri $uri -Credential $creds | ForEach-Object {$_.Value} | Select-Object -Property name, id
