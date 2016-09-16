@@ -29,6 +29,18 @@
 
     This example sets PowerShell as the default shell on the computers returned from the
     Get-AdComputer cmdlet using the supplied credentials.
+
+.EXAMPLE
+    Set-d00mPowerShellDefaultShell -VMName vm01, vm02 -VMCredential (Get-Credential)
+
+    This example sets PowerShell as the default shell on the virtual machines vm01 and vm02
+    using the supplied VM administrator credentials
+
+.EXAMPLE
+    Set-d00mPowerShellDefaultShell -ComputerName Computer1 -Restart
+
+    This example sets PowerShell as the default shell on Computer1 and restarts Computer1
+    after execution
 #>
 
 function Set-d00mPowerShellDefaultShell
