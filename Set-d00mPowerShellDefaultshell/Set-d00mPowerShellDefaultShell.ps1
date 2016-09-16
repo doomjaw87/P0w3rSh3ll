@@ -33,15 +33,32 @@
 
 function Set-d00mPowerShellDefaultShell
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Computer")]
     param
     (
-        [parameter(ValueFromPipelineByPropertyName,
-                   ValueFromPipeline)]
+        #Computer names
+        [parameter(ValueFromPipelineByPropertyName = $true,
+                   ValueFromPipeline = $true,
+                   ParameterSetName  = "Computer")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
 
+        #Computer name admin credential
+        [parameter(ParameterSetName = "Computer")]
+        [pscredential]$Credential,
+
+        #VM names
+        [parameter(ValueFromPipelineByPropertyName = $true,
+                   ValueFromPipeline = $true,
+                   ParameterSetName  = "VM")]
+        [string[]]$VMName,
+
+        #VM admin credential
+        [parameter(ParameterSetNAme = "VM")]
+        [pscredential]$VMCredential,
+
+        #Restart computer after completion
         [parameter()]
-        [pscredential]$Credential
+        [switch]$Restart
     )
 
     begin
@@ -56,47 +73,137 @@ function Set-d00mPowerShellDefaultShell
 
     process
     {
-        foreach ($computer in $ComputerName)
+        Write-Verbose -Message ('{0} : ParameterSetName : {1}' -f $cmdletName, $PSCmdlet.ParameterSetName)
+
+        switch ($PSCmdlet.ParameterSetName)
         {
-            Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
-            try
+            "Computer"
             {
-                $params = @{ComputerName = $computer
-                            ErrorAction  = 'Stop'
-                            ArgumentList = $keyPath}
-                if ($Credential -ne $null)
+                foreach ($computer in $ComputerName)
                 {
-                    $params.Add('Credential', $Credential)
-                    Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
-                }
-                else
-                {
-                    Write-Verbose -Message ('{0} : {1} : Using current user credentials' -f $cmdletName, $computer)
-                }
+                    Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+                    try
+                    {
+                        $params = @{ComputerName = $computer
+                                    ErrorAction  = 'Stop'}
 
-                $result = Invoke-Command @params -ScriptBlock {
-                    $shellParams = @{Path  = $args[0]
-                                     Name  = 'shell'
-                                     Value = 'PowerShell.exe -NoExit'}
-                    Set-ItemProperty @shellParams
+                        # Add credentials if specified
+                        if ($Credential -ne $null)
+                        {
+                            $params.Add('Credential', $Credential)
+                            Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+                        }
+                        else
+                        {
+                            Write-Verbose -Message ('{0} : {1} : Using current user credentials' -f $cmdletName, $computer)
+                        }
+
+                        # Set restart flag
+                        if ($Restart)
+                        {
+                            $params.Add('ArgumentList', @($keyPath, $true))
+                            Write-Verbose -Message ('{0} : {1} : Restarting computer after execution' -f $cmdletName, $computer)
+                        }
+                        else
+                        {
+                            $params.Add('ArgumentList', $keyPath)
+                            Write-Verbose -Message ('{0} : {1} : Not restarting computer after execution' -f $cmdletName, $computer)
+                        }
+
+
+                        $result = Invoke-Command @params -ScriptBlock {
+                            $shellParams = @{Path  = $args[0]
+                                             Name  = 'shell'
+                                             Value = 'PowerShell.exe -NoExit'}
+                            Set-ItemProperty @shellParams
                     
-                    if ($(Get-ItemProperty -Path $args[0] -Name 'shell').Shell -eq 'PowerShell.exe -NoExit')
-                    {
-                        Write-Output $true
+                            if ($(Get-ItemProperty -Path $args[0] -Name 'shell').Shell -eq 'PowerShell.exe -NoExit')
+                            {
+                                Write-Output $true
+                            }
+                            else
+                            {
+                                Write-Output $false
+                            }
+
+                            # Check for restart flag
+                            if ($args[1] -ne $null)
+                            {
+                                Restart-Computer -Force
+                            }
+                        }
+
+                        New-Object -TypeName psobject -Property @{ComputerName      = $computer
+                                                                  PowerShellDefault = $result} | 
+                            Write-Output
                     }
-                    else
+                    catch
                     {
-                        Write-Output $false
+                        throw
                     }
                 }
-
-                New-Object -TypeName psobject -Property @{ComputerName      = $computer
-                                                          PowerShellDefault = $result} | 
-                    Write-Output
             }
-            catch
+
+            "VM"
             {
-                throw
+                foreach ($vm in $VMName)
+                {
+                    Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $vm)
+                    try
+                    {
+                        $params = @{VMName       = $vm
+                                    ErrorAction  = 'Stop'}
+                        if ($VMCredential -ne $null)
+                        {
+                            $params.Add('Credential', $VMCredential)
+                            Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $vm)
+                        }
+                        else
+                        {
+                            Write-Verbose -Message ('{0} : {1} : Using current user credentials' -f $cmdletName, $vm)
+                        }
+
+                        if ($Restart)
+                        {
+                            $params.Add('ArgumentList', @($keyPath, $true))
+                            Write-Verbose ('{0} : {1} : Restarting VM after execution' -f $cmdletName, $vm)
+                        }
+                        else
+                        {
+                            $params.Add('ArgumentList', $keyPath)
+                            Write-Verbose ('{0} : {1} : Not restarting VM after execution' -f $cmdletName, $vm)
+                        }
+
+                        $result = Invoke-Command @params -ScriptBlock {
+                            $shellParams = @{Path  = $args[0]
+                                             Name  = 'shell'
+                                             Value = 'PowerShell.exe -NoExit'}
+                            Set-ItemProperty @shellParams
+                    
+                            if ($(Get-ItemProperty -Path $args[0] -Name 'shell').Shell -eq 'PowerShell.exe -NoExit')
+                            {
+                                Write-Output $true
+                            }
+                            else
+                            {
+                                Write-Output $false
+                            }
+
+                            If ($args[1] -ne $null)
+                            {
+                                Restart-Computer -Force
+                            }
+                        }
+
+                        New-Object -TypeName psobject -Property @{ComputerName      = $vm
+                                                                  PowerShellDefault = $result} | 
+                            Write-Output
+                    }
+                    catch
+                    {
+                        throw
+                    }
+                }
             }
         }
     }
