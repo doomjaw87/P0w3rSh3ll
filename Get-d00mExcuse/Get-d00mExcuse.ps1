@@ -1,3 +1,21 @@
+<#
+.SYNOPSIS
+    Creates new BOFH-style excuses
+
+.DESCRIPTION
+    Randomly generates BOFH-style excuses from 3 different word lists
+
+.EXAMPLE
+    Get-d00mExcuse
+
+    This example outputs a single randomly generated BOFH-style excuse
+
+.EXAMPLE
+    Get-d00mExcuse -Count 10
+
+    This example outputs 10 randly generated BOFH-style excuses
+#>
+
 function Get-d00mExcuse
 {
     [CmdletBinding()]
@@ -86,4 +104,3 @@ function Get-d00mExcuse
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
-}
