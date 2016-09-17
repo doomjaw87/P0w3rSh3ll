@@ -104,3 +104,4 @@ function Get-d00mExcuse
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
+}
