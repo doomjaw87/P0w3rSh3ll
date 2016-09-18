@@ -227,29 +227,57 @@ function Get-d00mExcuse
 
 <#
 .SYNOPSIS
+    Generates system inventory HTML report
 
 .DESCRIPTION
-    
-.EXAMPLE
+    Queries useful properties from different WMI classes
+    via CIM and generates an HTML report saved to the
+    file system
 
 .EXAMPLE
+    Get-d00mHardwareReport
+
+    This example generates a system inventory HTML report
+    saved to the current file system location using the
+    default credentials.
 
 .EXAMPLE
+    Computer1, Computer2 | Get-d00mHardwareReport
 
+    This example generates a system inventory HTML report
+    for the computer names piped in to the cmdlet saved
+    to the current file system location using the default
+    credentials.
+
+.EXAMPLE
+    Get-d00mHardwareReport -ComputerName Computer1 -Credential (Get-Credential)
+
+    This example generates a systme inventory HTML report
+    for Computer1 using the credentials suppied saved to
+    the current file system location.
+
+.EXAMPLE
+    Get-d00mHardwareReport -FilePath c:\path\to\report
+
+    This example generates a system inventory HTML report
+    for the local machine using default credentials and saved
+    to the file system path specified.
 #>
-
 function Get-d00mHardwareReport
 {
     [CmdletBinding()]
     param
     (
+        #Computer names to create a systems inventory report
         [parameter(ValueFromPipeline = $true,
                    ValueFromPipelineByPropertyName = $true)]
         [string[]]$ComputerName = $env:COMPUTERNAME,
 
+        #File system path to save the report
         [parameter()]
         [string]$FilePath = $(Get-Location),
 
+        #Credentials to use for querying WMI
         [parameter()]
         [pscredential]$Credential
     )
@@ -267,25 +295,49 @@ function Get-d00mHardwareReport
         {
             Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
             $html = New-Object -TypeName System.Text.StringBuilder
-            $html.AppendLine(('<html>
+            $html.AppendLine("<html>
                                 <head>
-                                    <title>{0} Hardware Inventory</title>
+                                    <title>$($computer) Hardware Inventory</title>
+                                    <style>
+                                        table, th, td {
+                                            border: 1px solid green;
+                                            border-collapse: collapse;
+                                        }
+
+                                        tr.alt td {
+                                            background-color: `#171717;
+                                        }
+
+                                        tr.heading td {
+                                            font-weight: bold;
+                                            text-align: center;
+                                            font-size: larger;
+                                            color: white;
+                                            background-color: `#333333;
+                                        }
+
+                                        body {
+                                            background-color: black;
+                                            color: `#bdbdbd;
+                                            font-family: lucida consolas, monospace;
+                                        }
+                                    </style>
                                 </head>
                                 <body>
                                     <table>
-                                        <tr>
-                                            <td colspan="2">{0}</td>
+                                        <tr class=`"heading`">
+                                            <td colspan=`"2`">$($computer)</td>
                                         </tr>
                                         <tr>
                                             <td>Report</td>
                                             <td>Date</td>
                                         </tr>
                                         <tr>
-                                            <td>{1}</td>
-                                            <td>{2}</td>
+                                            <td>$($cmdletName)</td>
+                                            <td>$(Get-Date)</td>
                                         </tr>
                                     </table>
-                                </br>' -f $computer, $cmdletName, $(Get-Date))) | Out-Null
+                                </br>") | Out-Null
             try
             {
                 $sessionParams = @{ComputerName = $computer
@@ -309,13 +361,14 @@ function Get-d00mHardwareReport
                 $cim = Get-CimInstance -ClassName Win32_BaseBoard @cimParams
                 if ($cim)
                 {
-                    $html.AppendLine(('<table>
-                                        <tr>
+                    $html.AppendLine(('
+                                    <table>
+                                        <tr class="heading">
                                             <td colspan="2">
                                                 Win32_BaseBoard
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Name</td>
                                             <td>{0}</td>
                                         </tr>
@@ -323,7 +376,7 @@ function Get-d00mHardwareReport
                                             <td>Manufacturer</td>
                                             <td>{1}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Product</td>
                                             <td>{2}</td>
                                         </tr>
@@ -331,7 +384,7 @@ function Get-d00mHardwareReport
                                             <td>SerialNumber</td>
                                             <td>{3}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Status</td>
                                             <td>{4}</td>
                                         </tr>
@@ -348,11 +401,12 @@ function Get-d00mHardwareReport
                 $cim = Get-CimInstance -ClassName Win32_Bios @cimParams
                 if ($cim)
                 {
-                    $html.AppendLine(('<table>
-                                        <tr>
+                    $html.AppendLine(('
+                                    <table>
+                                        <tr class="heading">
                                             <td colspan="2">Win32_Bios</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>SerialNumber</td>
                                             <td>{0}</td>
                                         </tr>
@@ -360,7 +414,7 @@ function Get-d00mHardwareReport
                                             <td>Manufacturer</td>
                                             <td>{1}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Name</td>
                                             <td>{2}</td>
                                         </tr>
@@ -368,12 +422,12 @@ function Get-d00mHardwareReport
                                             <td>PrimaryBios</td>
                                             <td>{3}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>ReleaseDate</td>
                                             <td>{4}</td>
                                         </tr>
                                         <tr>
-                                            <td>BiosVersion</td>
+                                            <td>Version</td>
                                             <td>{5}</td>
                                         </tr>
                                     </table>
@@ -382,7 +436,7 @@ function Get-d00mHardwareReport
                                           $cim.Name,
                                           $cim.PrimaryBIOS,
                                           $cim.ReleaseDate,
-                                          $cim.BIOSVersion)) | Out-Null
+                                          $cim.Version)) | Out-Null
                 }
                 $cim = $null
 
@@ -390,11 +444,12 @@ function Get-d00mHardwareReport
                 $cim = Get-CimInstance -ClassName Win32_CDROMDrive @cimParams
                 if ($cim)
                 {
-                    $html.AppendLine(('<table>
-                                        <tr>
+                    $html.AppendLine(('
+                                    <table>
+                                        <tr class="heading">
                                             <td colspan="2">Win32_CDROMDrive</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Name</td>
                                             <td>{0}</td>
                                         </tr>
@@ -402,7 +457,7 @@ function Get-d00mHardwareReport
                                             <td>Drive</td>
                                             <td>{1}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>MediaLoaded</td>
                                             <td>{2}</td>
                                         </tr>
@@ -417,11 +472,12 @@ function Get-d00mHardwareReport
                 $cim = Get-CimInstance -ClassName Win32_ComputerSystem @cimParams
                 if ($cim)
                 {
-                    $html.AppendLine(('<table>
-                                        <tr>
+                    $html.AppendLine(('
+                                    <table>
+                                        <tr class="heading">
                                             <td colspan="2">Win32_ComputerSystem</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Caption</td>
                                             <td>{0}</td>
                                         </tr>
@@ -429,7 +485,7 @@ function Get-d00mHardwareReport
                                             <td>UserName</td>
                                             <td>{1}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Manufacturer</td>
                                             <td>{2}</td>
                                         </tr>
@@ -437,7 +493,7 @@ function Get-d00mHardwareReport
                                             <td>Model</td>
                                             <td>{3}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>SystemType</td>
                                             <td>{4}</td>
                                         </tr>
@@ -463,10 +519,10 @@ function Get-d00mHardwareReport
                     {
                         $html.AppendLine(('
                                     <table>
-                                        <tr>
+                                        <tr class="heading">
                                             <td colspan="2">Win32_DiskDrive : {0}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Index</td>
                                             <td>{0}</td>
                                         </tr>
@@ -474,7 +530,7 @@ function Get-d00mHardwareReport
                                             <td>DeviceID</td>
                                             <td>{1}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Model</td>
                                             <td>{2}</td>
                                         </tr>
@@ -482,7 +538,7 @@ function Get-d00mHardwareReport
                                             <td>SerialNumber</td>
                                             <td>{3}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>InterfaceType</td>
                                             <td>{4}</td>
                                         </tr>
@@ -490,7 +546,7 @@ function Get-d00mHardwareReport
                                             <td>Size</td>
                                             <td>{5}</td>
                                         </tr>
-                                        <tr>
+                                        <tr class="alt">
                                             <td>Partitions</td>
                                             <td>{6}</td>
                                         </tr>
@@ -500,7 +556,7 @@ function Get-d00mHardwareReport
                                           $disk.Model,
                                           $disk.SerialNumber,
                                           $disk.InterfaceType,
-                                          $disk.Size,
+                                          $([int]$(($disk.Size)/1GB)),
                                           $disk.Partitions)) | Out-Null
                     }
                 }
@@ -514,10 +570,10 @@ function Get-d00mHardwareReport
                     {
                         $html.AppendLine(('
                                         <table>
-                                            <tr>
+                                            <tr class="heading">
                                                 <td colspan="2">Win32_LogicalDisk : {0}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>DeviceID</td>
                                                 <td>{0}</td>
                                             </tr>
@@ -525,7 +581,7 @@ function Get-d00mHardwareReport
                                                 <td>Description</td>
                                                 <td>{1}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>DriveType</td>
                                                 <td>{2}</td>
                                             </tr>' -f $drive.DeviceID,
@@ -545,7 +601,7 @@ function Get-d00mHardwareReport
                                                 <td>VolumeName</td>
                                                 <td>{0}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>FileSystem</td>
                                                 <td>{1}</td>
                                             </tr>
@@ -553,14 +609,14 @@ function Get-d00mHardwareReport
                                                 <td>FreeSpace</td>
                                                 <td>{2}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>UsedSpace</td>
                                                 <td>{3}</td>
                                             </tr>
                                             <tr>
                                                 <td>Size</td>
                                                 <td>{4}</td>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>PercentFree</td>
                                                 <td>{5}</td>
                                             </tr>
@@ -589,14 +645,14 @@ function Get-d00mHardwareReport
                     {
                         $html.AppendLine(('
                                         <table>
-                                            <tr>
+                                            <tr class="heading">
                                                 <td colspan="2">Win32_NetworkAdapter {0} </td>
                                             </tr>
                                             <tr>
                                                 <td>Index</td>
                                                 <td>{0}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>Name</td>
                                                 <td>{1}</td>
                                             </tr>
@@ -604,7 +660,7 @@ function Get-d00mHardwareReport
                                                 <td>Connection</td>
                                                 <td>{2}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>DeviceID</td>
                                                 <td>{3}</td>
                                             </tr>
@@ -612,7 +668,7 @@ function Get-d00mHardwareReport
                                                 <td>MACAddress</td>
                                                 <td>{4}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>Manufacturer</td>
                                                 <td>{5}</td>
                                             </tr>
@@ -620,7 +676,7 @@ function Get-d00mHardwareReport
                                                 <td>AdapterType</td>
                                                 <td>{6}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>Speed</td>
                                                 <td>{7}</td>
                                             </tr>
@@ -645,10 +701,10 @@ function Get-d00mHardwareReport
                     {
                         $html.AppendLine(('
                                         <table>
-                                            <tr>
+                                            <tr class="heading">
                                                 <td colspan="2">Win32_NetworkAdapterConfiguration {0}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>InterfaceIndex</td>
                                                 <td>{0}</td>
                                             </tr>
@@ -656,7 +712,7 @@ function Get-d00mHardwareReport
                                                 <td>ServiceName</td>
                                                 <td>{1}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>IPAddress</td>
                                                 <td>{2}</td>
                                             </tr>
@@ -664,7 +720,7 @@ function Get-d00mHardwareReport
                                                 <td>DHCPEnabled</td>
                                                 <td>{3}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>DHCPServer</td>
                                                 <td>{4}</td>
                                             </tr>
@@ -672,7 +728,7 @@ function Get-d00mHardwareReport
                                                 <td>DefaultIPGateway</td>
                                                 <td>{5}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>DNSServerSearchOrder</td>
                                                 <td>{6}</td>
                                             </tr>
@@ -680,7 +736,7 @@ function Get-d00mHardwareReport
                                                 <td>WINSPrimaryServer</td>
                                                 <td>{7}</td>
                                             </tr>
-                                            <tr>
+                                            <tr class="alt">
                                                 <td>IPSubnet</td>
                                                 <td>{8}</td>
                                             </tr>
@@ -698,11 +754,224 @@ function Get-d00mHardwareReport
                 }
                 $cim = $null
 
-                Write-Verbose -Message ('{0} : {1} : Getting Win32_OperatingSystem...' -f $cmdletName, $computer) 
-                Write-Verbose -Message ('{0} : {1} : Getting Win32_PhysicalMemory...' -f $cmdletName, $computer) 
-                Write-Verbose -Message ('{0} : {1} : Getting Win32_WMIMonitorID...' -f $cmdletName, $computer) 
-                Write-Verbose -Message ('{0} : {1} : Getting Win32_Processor...' -f $cmdletName, $computer) 
+                Write-Verbose -Message ('{0} : {1} : Getting Win32_OperatingSystem...' -f $cmdletName, $computer)
+                $cim = Get-CimInstance -ClassName Win32_OperatingSystem @cimParams
+                if ($cim)
+                {
+                    $html.AppendLine(('
+                                        <table>
+                                            <tr class="heading">
+                                                <td colspan="2">Win32_OperatingSystem</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>BuildNumber</td>
+                                                <td>{0}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Caption</td>
+                                                <td>{1}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Manufacturer</td>
+                                                <td>{2}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>OSArchitecture</td>
+                                                <td>{3}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>RegisteredUser</td>
+                                                <td>{4}</td>
+                                            </tr> 
+                                            <tr>
+                                                <td>SerialNumber</td>
+                                                <td>{5}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Version</td>
+                                                <td>{6}</td>
+                                            </tr>
+                                        </table>
+                                    </br>' -f $cim.BuildNumber,
+                                              $cim.Caption,
+                                              $cim.Manufacturer,
+                                              $cim.OSArchitecture,
+                                              $cim.RegisteredUser,
+                                              $cim.SerialNumber,
+                                              $cim.Version)) | Out-Null
+                }
+                $cim = $null
 
+                Write-Verbose -Message ('{0} : {1} : Getting Win32_PhysicalMemory...' -f $cmdletName, $computer) 
+                $cim = Get-CimInstance -ClassName Win32_PhysicalMemory @cimParams
+                if ($cim)
+                {
+                    foreach ($mem in $cim)
+                    {
+                        $html.AppendLine(('
+                                        <table>
+                                            <tr class="heading">
+                                                <td colspan="2">Win32_PhysicalMemory {0}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>BankLabel</td>
+                                                <td>{0}</td>
+                                            <tr>
+                                                <td>DeviceLocator</td>
+                                                <td>{1}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Capacity</td>
+                                                <td>{2}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Manufacturer</td>
+                                                <td>{3}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>PartNumber</td>
+                                                <td>{4}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>SerialNumber</td>
+                                                <td>{5}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Speed</td>
+                                                <td>{6}</td>
+                                            </tr>
+                                        </table>
+                                    </br>' -f $mem.BankLabel,
+                                              $mem.DeviceLocator,
+                                              $($mem.Capacity/1GB),
+                                              $mem.Manufacturer,
+                                              $mem.PartNumber,
+                                              $mem.SerialNumber,
+                                              $mem.Speed)) | Out-Null
+                    }
+                }
+                $cim = $null
+
+                Write-Verbose -Message ('{0} : {1} : Getting WMIMonitorID...' -f $cmdletName, $computer) 
+                $cim = Get-CimInstance -ClassName WMIMonitorID -Namespace root\wmi @cimParams
+                if ($cim)
+                {
+                    $count = 0
+                    foreach ($mon in $cim)
+                    {
+                        # check for null values
+                        if (!([string]::IsNullOrEmpty($mon.ManufacturerName)))
+                        {
+                            $man = [System.Text.Encoding]::ASCII.GetString($mon.ManufacturerName)
+                        }
+                        else
+                        {
+                            $man = 'null'
+                        }
+
+                        if (!([string]::IsNullOrEmpty($mon.UserFriendlyName)))
+                        {
+                            $name = [System.Text.Encoding]::ASCII.GetString($mon.UserFriendlyName)
+                        }
+                        else
+                        {
+                            $name = 'null'
+                        }
+
+                        if (!([string]::IsNullOrEmpty($mon.SerialNumberID)))
+                        {
+                            $id = $mon.SerialNumberID -join ''
+                        }
+                        else
+                        {
+                            $id = 'null'
+                        }
+
+                        $html.AppendLine(('
+                                        <table>
+                                            <tr class="heading">
+                                                <td colspan="2">WMIMonitorID {0}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>ManufacturerName</td>
+                                                <td>{1}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>UserFriendlyName</td>
+                                                <td>{2}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>SerialNumberID</td>
+                                                <td>{3}</td>
+                                            </tr>
+                                        </table>
+                                    </br>' -f $count,
+                                              $man,
+                                              $name,
+                                              $id)) | Out-Null
+                        $count++
+                    }
+                }
+                $cim = $null
+
+                Write-Verbose -Message ('{0} : {1} : Getting Win32_Processor...' -f $cmdletName, $computer) 
+                $cim = Get-CimInstance -ClassName Win32_Processor @cimParams
+                if ($cim)
+                {
+                    $count = 0
+                    foreach ($proc in $cim)
+                    {
+                        $html.AppendLine(('
+                                        <table>
+                                            <tr class="heading">
+                                                <td colspan="2">Win32_Processor {0}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Name</td>
+                                                <td>{1}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Manufacturer</td>
+                                                <td>{2}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Caption</td>
+                                                <td>{3}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>DeviceID</td>
+                                                <td>{4}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>CurrentClockSpeed</td>
+                                                <td>{5}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>NumberOfCores</td>
+                                                <td>{6}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>ProcessorID</td>
+                                                <td>{7}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Status</td>
+                                                <td>{8}</td>
+                                            </tr>
+                                        </table>
+                                    </br>' -f $count,
+                                              $proc.Name,
+                                              $proc.Manufacturer,
+                                              $proc.Caption,
+                                              $proc.DeviceID,
+                                              $proc.CurrentClockSpeed,
+                                              $proc.NumberOfCores,
+                                              $proc.ProcessorID,
+                                              $proc.Status)) | Out-Null
+                        $count++
+                    }
+                }
+                $cim = $null
 
                 $html.ToString() | 
                     Out-File -FilePath ('{0}\{1}_HardwareReport_{2}.html' -f $FilePath, 
