@@ -993,3 +993,294 @@ function Get-d00mHardwareReport
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
+
+<#
+.SYNOPSIS
+    Generates installed software HTML report
+
+.DESCRIPTION
+    Gets registry values for installed programs and
+    generates an HTML report saved to the current
+    file path location by default
+
+.EXAMPLE
+    Get-d00mSoftwareReport
+
+    This example generates an installed software HTML report
+    for the local computer and saved to the current file path
+    location.
+    
+.EXAMPLE
+    Get-d00mSoftwareReport -ComputerName Computer1, Computer2
+
+    This example generates an installed software HTML report
+    for the remote computers, Computer1 and Computer2, and saves
+    them to the current file path location
+
+.EXAMPLE
+    'Computer1' | Get-d00mSoftwareReport -Credential (Get-Credential)
+
+    This example generates an installed software HTML report
+    for the piped in computer name using the credentials supplied and
+    saves to the current file path location
+
+.EXAMPLE
+    (Get-AdComputer -Filter {(Enabled -eq 'true')}).Name | Get-d00mSoftwareReport -FilePath C:\path
+
+    This example generates an installed software HTML report for each
+    of the computer names returned from the Get-AdComputer cmdlet and saves
+    them to the file path specifed
+#>
+function Get-d00mSoftwareReport
+{
+    [CmdletBinding()]
+    param
+    (
+        #Computer names to create a systems inventory report
+        [parameter(ValueFromPipeline = $true,
+                   ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        #File system path to save the report
+        [parameter()]
+        [string]$FilePath = $(Get-Location),
+
+        #Credentials to use for accessing remote computer
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            $html = New-Object -TypeName System.Text.StringBuilder
+            $html.AppendLine("<html>
+                                <head>
+                                    <title>$($computer) Software Inventory</title>
+                                    <style>
+                                        table, th, td {
+                                            border: 1px solid green;
+                                            border-collapse: collapse;
+                                        }
+
+                                        tr.alt td {
+                                            background-color: `#171717;
+                                        }
+
+                                        tr.heading td {
+                                            font-weight: bold;
+                                            text-align: center;
+                                            font-size: larger;
+                                            color: white;
+                                            background-color: `#333333;
+                                        }
+
+                                        body {
+                                            background-color: black;
+                                            color: `#bdbdbd;
+                                            font-family: lucida consolas, monospace;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <table>
+                                        <tr class=`"heading`">
+                                            <td colspan=`"2`">$($computer)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Report</td>
+                                            <td>Date</td>
+                                        </tr>
+                                        <tr>
+                                            <td>$($cmdletName)</td>
+                                            <td>$(Get-Date)</td>
+                                        </tr>
+                                    </table>
+                                </br>") | Out-Null
+
+            try
+            {
+                Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $session = New-PSSession @sessionParams
+
+                Invoke-Command -Session $session -ScriptBlock {
+                    $keys    = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
+                    $reg     = [Microsoft.Win32.RegistryKey]::OpenBaseKey('LocalMachine', [Microsoft.Win32.RegistryView]::Default)
+                    $regKey  = $reg.OpenSubKey($keys)
+                    $subKeys = $regKey.GetSubKeyNames()
+                    foreach ($key in $subKeys)
+                    {
+                        $thisKey    = ('{0}\\{1}' -f $keys, $key)
+                        $thisSubKey = $reg.OpenSubKey($thisKey)
+                        
+                        $name = $null
+                        $name = $thisSubKey.GetValue('DisplayName')
+                        if ([System.String]::IsNullOrEmpty($name))
+                        {
+                            $name = 'No DisplayName'
+                        }
+
+                        $version = $null
+                        $version = $thisSubKey.GetValue('DisplayVersion')
+                        if ([system.String]::IsNullOrEmpty($version))
+                        {
+                            $version = 'No DisplayVersion'
+                        }
+
+                        $location = $null
+                        $location = $thisSubKey.GetValue('InstallLocation')
+                        if ([System.String]::IsNullOrEmpty($location))
+                        {
+                            $location = 'No InstallLocation'
+                        }
+
+                        $publisher = $null
+                        $publisher = $thisSubKey.GetValue('Publisher')
+                        if ([System.String]::IsNullOrEmpty($publisher))
+                        {
+                            $publisher = 'No Publisher'
+                        }
+
+                        $comments = $null
+                        $comments = $thisSubKey.GetValue('Comments')
+                        if ([System.String]::IsNullOrEmpty($comments))
+                        {
+                            $comments = 'No Comments'
+                        }
+                        $props = @{DisplayName     = $name
+                                   DisplayVersion  = $version
+                                   InstallLocation = $location
+                                   Publisher       = $publisher
+                                   Comments        = $comments
+                                   KeyName         = $key.ToString().Replace('{','').Replace('}','')}
+                        New-Object -TypeName psobject -Property $props | 
+                            Write-Output
+                    }
+                } | ForEach-Object {
+                        $html.AppendLine(('
+                            <table>
+                                <tr class="heading">
+                                    <td colspan="2">{0}</td>
+                                </tr>
+                                <tr class="alt">
+                                    <td>DisplayName</td>
+                                    <td>{0}</td>
+                                </tr>
+                                <tr>
+                                    <td>DisplayVersion</td>
+                                    <td>{1}</td>
+                                </tr>
+                                <tr class="alt">
+                                    <td>InstallLocation</td>
+                                    <td>{2}</td>
+                                </tr>
+                                <tr>
+                                    <td>Publisher</td>
+                                    <td>{3}</td>
+                                </tr>
+                                <tr class="alt">
+                                    <td>Comments</td>
+                                    <td>{4}</td>
+                                </tr>
+                                <tr>
+                                    <td>KeyName</td>
+                                    <td>{5}</td>
+                                </tr>
+                            </table>
+                        </br>' -f $_.DisplayName,
+                                  $_.DisplayVersion,
+                                  $_.InstallLocation,
+                                  $_.Publisher,
+                                  $_.Comments,
+                                  $_.KeyName)) | Out-Null
+                    }
+                $html.ToString() | 
+                    Out-File -FilePath ('{0}\{1}_SoftwareReport_{2}.html' -f $FilePath, 
+                                                                             $computer, 
+                                                                             $(Get-Date -Format 'yyyyMMdd'))
+                Remove-PSSession -Session $session
+            }
+            catch
+            {
+                throw
+            }
+        }
+    }
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+function Get-d00mRandomColor
+{
+    $(switch(Get-Random -Minimum 1 -Maximum 15)
+    {
+        1  {'Gray'}
+        2  {'Blue'}
+        3  {'Green'}
+        4  {'Cyan'}
+        5  {'Red'}
+        6  {'Magenta'}
+        7  {'Yellow'}
+        8  {'White'}
+        9  {'Black'}
+        10 {'DarkBlue'}
+        11 {'DarkGreen'}
+        12 {'DarkCyan'}
+        13 {'DarkRed'}
+        14 {'DarkMagenta'}
+        15 {'DarkYellow'}
+    }) | Write-Output
+}
+function Get-d00mRandomSpace
+{
+    $(switch(Get-Random -Minimum 1 -Maximum 15)
+    {
+        1  {' '}
+        2  {'  '}
+        3  {'   '}
+        4  {'    '}
+        6  {'     '}
+        7  {'      '}
+        8  {'       '}
+        9  {'        '}
+        10 {'         '}
+        11 {'          '}
+        12 {'           '}
+        13 {'            '}
+        14 {'             '}
+        15 {'              '}
+    }) | Write-Output
+}
+function New-d00mColorFlood
+{
+    while ($true)
+    {
+        $params = @{BackgroundColor = $(Get-d00mRandomColor)
+                    NoNewLine       = $true}
+        Write-Host $(Get-d00mRandomSpace) @params
+    }
+}
