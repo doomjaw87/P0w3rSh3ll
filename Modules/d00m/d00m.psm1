@@ -299,7 +299,7 @@ function Get-d00mHardwareReport
                                 <head>
                                     <title>$($computer) Hardware Inventory</title>
                                     <style>
-                                        table, th, td {
+                                        table, tr, td {
                                             border: 1px solid green;
                                             border-collapse: collapse;
                                         }
@@ -699,6 +699,80 @@ function Get-d00mHardwareReport
                 {
                     foreach ($adapter in $cim)
                     {
+                        $ip = ''
+                        if ($adapter.IPAddress.Count -gt 1)
+                        {
+                            foreach ($address in $adapter.IPAddress)
+                            {
+                                $ip += $address + '; '
+                            }
+                        }
+                        else
+                        {
+                            $ip = $adapter.IPAddress[0]
+                        }
+                        
+                        $gateway = ''
+                        if ($adapter.DefaultIPGateway.Count -gt 1)
+                        {
+                            $counter = 0
+                            foreach ($g in $adapter.DefaultIPGateway)
+                            {
+                                $gateway += $g + '; '
+                            }
+                        }
+                        else
+                        {
+                            if ($adapter.DefaultIPGateway -ne $null)
+                            {
+                                $gateway = $adapter.DefaultIPGateway[0]
+                            }
+                            else
+                            {
+                                $gateway = 'null'
+                            }
+                        }
+
+                        $dnsserverorder = ''
+                        if ($adapter.DnsServerSearchOrder.Count -gt 1)
+                        {
+                            foreach ($dns in $adapter.DnsServerSearchOrder)
+                            {
+                                $dnsserverorder += $dns + '; '
+                            }
+                        }
+                        else
+                        {
+                            if ($adapter.DnsServerSearchOrder -ne $null)
+                            {
+                                $dnsserverorder = $adapter.DnsServerSearchOrder[0]
+                            }
+                            else
+                            {
+                                $dnsserverorder = 'null'
+                            }
+                        }
+
+                        $subnet = ''
+                        if ($adapter.IPSubnet.Count -gt 1)
+                        {
+                            foreach ($subnet in $adapter.IPSubnet)
+                            {
+                                $subnet += $subnet + '; '
+                            }
+                        }
+                        else
+                        {
+                            if ($adapter.IPSubnet -ne $null)
+                            {
+                                $subnet = $adapter.IPSubnet[0]
+                            }
+                            else
+                            {
+                                $subnet = 'null'
+                            }
+                        }
+
                         $html.AppendLine(('
                                         <table>
                                             <tr class="heading">
@@ -743,13 +817,13 @@ function Get-d00mHardwareReport
                                         </table>
                                     </br>' -f $adapter.InterfaceIndex,
                                               $adapter.ServiceName,
-                                              $adapter.IPAddress[0],
+                                              $ip,
                                               $adapter.DHCPEnabled,
                                               $adapter.DHCPServer,
-                                              $adapter.DefaultIPGateway[0],
-                                              $adapter.DNSServerSearchOrder[0],
+                                              $gateway,
+                                              $dnsserverorder,
                                               $adapter.WINSPrimaryServer,
-                                              $adapter.IPSubnet[0])) | Out-Null
+                                              $subnet)) | Out-Null
                     }
                 }
                 $cim = $null
@@ -1036,7 +1110,7 @@ function Get-d00mSoftwareReport
     [CmdletBinding()]
     param
     (
-        #Computer names to create a systems inventory report
+        #Computer names to create an installed software inventory report
         [parameter(ValueFromPipeline = $true,
                    ValueFromPipelineByPropertyName = $true)]
         [string[]]$ComputerName = $env:COMPUTERNAME,
@@ -1066,7 +1140,7 @@ function Get-d00mSoftwareReport
                                 <head>
                                     <title>$($computer) Software Inventory</title>
                                     <style>
-                                        table, th, td {
+                                        table, tr, td {
                                             border: 1px solid green;
                                             border-collapse: collapse;
                                         }
@@ -1233,6 +1307,197 @@ function Get-d00mSoftwareReport
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
+
+<#
+.SYNOPSIS
+    Generates services HTML report
+
+.DESCRIPTION
+    Executes Get-Service on computers and gets the Name, DisplayName, ServiceName, Status,
+    and StartType and generates an HTML report in the current file system location by default.
+
+.EXAMPLE
+    Get-d00mServiceReport
+
+    This example gets the services on the local machine using the default credentials
+    and generates an HTML report in the current file system location.
+
+.EXAMPLE
+    Get-d00mServiceReport -ComputerName Computer1, Computer2
+
+    This example gets the services on the remote computers, Computer1 and Computer2, and generates
+    an HTML report for each in the current file system location.
+
+.EXAMPLE
+    'Computer1' | Get-d00mServiceReport -Credential (Get-Credential)
+
+    This example gets the services on the piped in computername, Computer1, using the specified
+    credentials and generates an HTML report in the current file system location.
+
+.EXAMPLe
+    Get-d00mServiceReport -FilePath c:\path
+
+    This example gets the services for the local computer using the default credentials and
+    generates an HTML report saved to the specified file system path.
+#>
+function Get-d00mServiceReport
+{
+    [CmdletBinding()]
+    param
+    (
+        #Computer names to create a services report
+        [parameter(ValueFromPipeline = $true,
+                   ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        #File system path to save the report
+        [parameter()]
+        [string]$FilePath = $(Get-Location),
+
+        #Credentials to use for accessing remote computer
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, 
+                                                                 $start)
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            try
+            {
+                $html = New-Object -TypeName System.Text.StringBuilder
+                $html.AppendLine("<html>
+                                <head>
+                                    <title>$($computer) Service Inventory</title>
+                                    <style>
+                                        table, tr, td {
+                                            border: 1px solid green;
+                                            border-collapse: collapse;
+                                        }
+
+                                        tr.alt td {
+                                            background-color: `#171717;
+                                        }
+
+                                        tr.heading td {
+                                            font-weight: bold;
+                                            text-align: center;
+                                            font-size: larger;
+                                            color: white;
+                                            background-color: `#333333;
+                                        }
+
+                                        body {
+                                            background-color: black;
+                                            color: `#bdbdbd;
+                                            font-family: lucida consolas, monospace;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <table>
+                                        <tr class=`"heading`">
+                                            <td colspan=`"2`">$($computer)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Report</td>
+                                            <td>Date</td>
+                                        </tr>
+                                        <tr>
+                                            <td>$($cmdletName)</td>
+                                            <td>$(Get-Date)</td>
+                                        </tr>
+                                    </table>
+                                </br>") | Out-Null
+                $params = @{ComputerName = $computer
+                            ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using specified credentials' -f $cmdletName, $computer)
+                    $params.Add('Credential', $Credential)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $session = New-PSSession @params
+
+                Invoke-Command $session -ErrorAction Stop -ScriptBlock {
+                    Get-Service | 
+                        Sort-Object -Property Name | 
+                        ForEach-Object {
+                            $svcProps = @{Name        = $_.Name
+                                          DisplayName = $_.DisplayName
+                                          ServiceName = $_.ServiceName
+                                          Status      = $_.Status
+                                          StartType   = $_.StartType}
+                            New-Object -TypeName psobject -Property $svcProps |
+                                Write-Output
+                        }
+                } | ForEach-Object {
+                    $html.AppendLine(('
+                                        <table>
+                                            <tr class="heading">
+                                                <td colspan="2">{0}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>Name</td>
+                                                <td>{0}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>DisplayName</td>
+                                                <td>{1}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>ServiceName</td>
+                                                <td>{2}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Status</td>
+                                                <td>{3}</td>
+                                            </tr>
+                                            <tr class="alt">
+                                                <td>StartType</td>
+                                                <td>{4}</td>
+                                            </tr>
+                                        </table>
+                                    </br>' -f $_.Name,
+                                              $_.DisplayName,
+                                              $_.ServiceName,
+                                              $_.Status,
+                                              $_.StartType)) | Out-Null
+                    }
+                $html.ToString() | 
+                    Out-File -FilePath ('{0}\{1}_SoftwareReport_{2}.html' -f $FilePath, 
+                                                                             $computer, 
+                                                                             $(Get-Date -Format 'yyyyMMdd'))
+                Remove-PSSession -Session $session
+            }
+            catch
+            {
+                throw
+            }
+        }
+    }
+
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+
 
 function Get-d00mRandomColor
 {
