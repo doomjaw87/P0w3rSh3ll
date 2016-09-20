@@ -58,6 +58,7 @@
     }
 }
 
+
 function Disconnect-d00mFrontera
 {
     [CmdletBinding()]
@@ -95,6 +96,7 @@ function Disconnect-d00mFrontera
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -224,6 +226,7 @@ function Get-d00mExcuse
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -1068,6 +1071,7 @@ function Get-d00mHardwareReport
     }
 }
 
+
 <#
 .SYNOPSIS
     Generates installed software HTML report
@@ -1308,6 +1312,7 @@ function Get-d00mSoftwareReport
     }
 }
 
+
 <#
 .SYNOPSIS
     Generates services HTML report
@@ -1498,7 +1503,6 @@ function Get-d00mServiceReport
 }
 
 
-
 function Get-d00mRandomColor
 {
     $(switch(Get-Random -Minimum 1 -Maximum 15)
@@ -1520,6 +1524,8 @@ function Get-d00mRandomColor
         15 {'DarkYellow'}
     }) | Write-Output
 }
+
+
 function Get-d00mRandomSpace
 {
     $(switch(Get-Random -Minimum 1 -Maximum 15)
@@ -1540,6 +1546,8 @@ function Get-d00mRandomSpace
         15 {'              '}
     }) | Write-Output
 }
+
+
 function New-d00mColorFlood
 {
     while ($true)
@@ -1549,3 +1557,207 @@ function New-d00mColorFlood
         Write-Host $(Get-d00mRandomSpace) @params
     }
 }
+
+<#
+.SYNOPSIS
+    Say some things!
+
+.DESCRIPTION
+    Use the SpeechSynthesizer object to speak specified text    
+
+.EXAMPLE
+    Get-d00mSayThings 'Hello world!'
+
+    This example gets the first female installed voice and uses
+    it to synthesize 'Hello world'
+
+.EXAMPLE
+    'Sup world' | Get-d00mSayThings -Gender Male
+
+    This example passes the piped-in string to the first male
+    installed voice and synthesizes 'Sup world'
+#>
+function Get-d00mSayThings
+{
+    [cmdletbinding()]
+    param
+    (
+        #Things you want me to say
+        [parameter(mandatory = $true, 
+                   ValueFromPipeline = $true, 
+                   Position=0)]
+        [string[]]$Things,
+
+        #Gender of speaker voice
+        [ValidateSet('Male','Female')]
+        [parameter()]
+        [string]$Gender = 'Female'
+    )
+
+    begin
+    {
+        Add-Type -AssemblyName System.Speech
+        $voice = New-Object -TypeName System.Speech.Synthesis.SpeechSynthesizer
+        $voice.SelectVoiceByHints($Gender)
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start = Get-Date
+    }
+
+    process
+    {
+        foreach ($thing in $Things)
+        {
+            Write-Verbose -Message ('{0} : Speaking {1}' -f $cmdletName, $thing)
+            $props = @{Spoken = $thing
+                       Gender = $Gender}
+            try
+            {
+                $voice.Speak($thing)
+                $props.Add('Success', $true)
+            }
+            catch
+            {
+                $props.Add('Success', $false)
+            }
+            $obj = New-Object -TypeName psobject -Property $props
+            Write-Output -InputObject $obj
+        }
+    }
+
+    end
+    {
+        Write-Verbose -Message ('{0} : Killing $voice object' -f $cmdletName)
+        $voice.Dispose()
+        $end = $($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+<#
+.SYNOPSIS
+    Add Chocolatey as a package source
+
+.DESCRIPTION
+    Adds Chocolatey as a package source on computers and
+    sets if its a trusted repository or not
+
+.EXAMPLE
+    Add-d00mChocolateyPackageSource -Trusted
+
+    This example adds Chocolatey as a trusted package source
+    on the local computer
+
+.EXAMPLE
+    Add-d00mChocolateyPackageSource -ComputerName Computer1, Computer2
+
+    This example adds Chocolatey as an untrusted package source
+    on the remote computers, Computer1 and Computer2
+
+.EXAMPLE
+    'Computer1' | Add-d00mChocolateyPackageSource -Trusted -Credential (Get-Credential)
+
+    This example adds Chocolatey as a trusted package source on
+    the piped in computer, Computer1, using the specified credentials
+
+#>
+function Add-d00mChocolateyPackageSource
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(ValueFromPipeline = $true,
+                   ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter()]
+        [switch]$Trusted,
+
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            try
+            {
+                Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+            
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'
+                                   ArgumentList = $Trusted}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+
+                $result = Invoke-Command @sessionParams -ScriptBlock {
+                    If (!(Get-PackageProvider -Name chocolatey))
+                    {
+                        try
+                        {
+                            $params = @{Name         = 'Chocolatey'
+                                        ProviderName = 'Chocolatey'
+                                        Location     = 'https://chocolatey.org/api/v2'
+                                        Trusted      = $args[0]
+                                        Force        = $true}
+                            Register-PackageSource @params
+                            Write-Output $true
+                        }
+                        catch
+                        {
+                            Write-Output $false
+                        }
+                    }
+                    else
+                    {
+                        Write-Output $true
+                    }
+                }
+
+                New-Object -TypeName psobject -Property @{ComputerName     = $computer
+                                                          ChocolateyResult = $result
+                                                          Trusted          = $Trusted} |
+                    Write-Output
+
+                Write-Verbose -Message ('{0} : {1} : End execution' -f $cmdletName, $computer)
+            }
+
+            catch
+            {
+                throw
+            }
+        }
+    }
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+Export-ModuleMember -Function Connect-d00mFrontera, 
+                              Disconnect-d00mFrontera, 
+                              Get-d00mExcuse, 
+                              Get-d00mHardwareReport, 
+                              Get-d00mSoftwareReport, 
+                              Get-d00mServiceReport, 
+                              New-d00mColorFlood,
+                              Get-d00mSayThings,
+                              Add-d00mChocolateyPackageSource
