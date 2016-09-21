@@ -1558,6 +1558,7 @@ function New-d00mColorFlood
     }
 }
 
+
 <#
 .SYNOPSIS
     Say some things!
@@ -1633,6 +1634,7 @@ function Get-d00mSayThings
         Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
     }
 }
+
 
 <#
 .SYNOPSIS
@@ -1752,6 +1754,429 @@ function Add-d00mChocolateyPackageSource
     }
 }
 
+
+<#
+.SYNOPSIS
+    Creates a new secure password
+
+.DESCRIPTION
+    Creates a randomly generated password using ASCII characters
+
+.EXAMPLE
+    New-d00mPassword
+
+    This example will generate a random password that is 10
+    characters long (default length)
+
+.EXAMPLE
+    New-d00mPassword -Lenth 50
+
+    This example will generate a random password that is 50
+    characters long
+#>
+function New-d00mPassword
+{
+    [CmdletBinding()]
+    param
+    (
+        #Password length
+        [parameter()]
+        [ValidateScript({$_ -gt 0})]
+        [int]$Length = 10
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+    }
+
+    process
+    {
+        Write-Verbose -Message ('{0} : Generating {1} length password' -f $cmdletName, $Length)
+        $ascii = New-Object -TypeName System.Collections.ArrayList
+        $a = 33
+        while ($a -le 126)
+        {
+            $ascii.Add([char][byte]$a) | Out-Null
+            $a++
+        }
+        
+        $password = New-Object -TypeName System.Text.StringBuilder
+        $counter = 1
+        while ($counter -le $Length)
+        {
+            $password.Append(($ascii | Get-Random)) | Out-Null
+            $counter++
+        }
+
+        Write-Output $password.ToString()
+    }
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+
+function New-d00mShortcutCheatSheet
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter()]
+        [string]$FilePath = (Get-Location)
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+    }
+
+    process
+    {
+        $html = New-Object -TypeName System.Text.StringBuilder
+        $html.AppendLine('<html>
+                            <head>
+                                <title>Shortcuts Cheat Sheet</title>
+                                <style>
+                                    table, tr, td {
+                                        border: 1px solid green;
+                                        border-collapse: collapse;
+                                    }
+
+                                    tr.alt td {
+                                        background-color: #171717;
+                                    }
+
+                                    tr.heading td {
+                                        font-weight: bold;
+                                        text-align: center;
+                                        font-size: larger;
+                                        color: white;
+                                        background-color: #333333;
+                                    }
+
+                                    body {
+                                        background-color: black;
+                                        color: #bdbdbd;
+                                        font-family: lucida consolas, monospace;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <table>
+                                    <tr class="heading">
+                                        <td>Utility</td>
+                                        <td>Shortcut</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Add Hardware Wizard</td>
+                                        <td>hdwwiz.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Administrative Tools</td>
+                                        <td>control admintools</td>
+                                    </tr>
+                                    <tr clas="alt">
+                                        <td>Calculator</td>
+                                        <td>calc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Command Prompt</td>
+                                        <td>cmd</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Computer Management</td>
+                                        <td>compmgmt.msc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Control Panel</td>
+                                        <td>control.exe</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Date and Time</td>
+                                        <td>timedate.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Device Manager</td>
+                                        <td>devmgmt.msc</td>
+                                    </td>
+                                    <tr class="alt">
+                                        <td>Devices and Printers</td>
+                                        <td>control printers</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dial-In</td>
+                                        <td>rasphone</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Disk Cleanup Utility</td>
+                                        <td>cleanmgr</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Disk Defragment</td>
+                                        <td>dfrg.msc</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Disk Management</td>
+                                        <td>diskmgmt.msc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Disk Partition Manager</td>
+                                        <td>diskmgmt.msc</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Event Viewer</td>
+                                        <td>eventvwr</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Folders Properties</td>
+                                        <td>control folders</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Explorer</td>
+                                        <td>Win+e</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Google Chrome</td>
+                                        <td>chrome</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Group Policy Editor</td>
+                                        <td>gpedit.msc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Internet Explorer</td>
+                                        <td>iexplorer</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Internet Properties</td>
+                                        <td>inetcpl.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Local Security Settings</td>
+                                        <td>secpol.cpl</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Local Users and Groups</td>
+                                        <td>lusrmgr.msc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Network Connections</td>
+                                        <td>ncpa.cpl</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Notepad</td>
+                                        <td>notepad</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Office Excel</td>
+                                        <td>excel</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Office Outlook</td>
+                                        <td>outlook</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Office Word</td>
+                                        <td>winword</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Performance Monitor</td>
+                                        <td>perfmon</td>
+                                    </tr>
+                                    <tr>
+                                        <td>PowerShell</td>
+                                        <td>powershell</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Power Options</td>
+                                        <td>powercfg.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Registry Editor</td>
+                                        <td>regedit</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Remote Desktop Connections</td>
+                                        <td>mstsc</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Resource Monitor</td>
+                                        <td>resmon</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Restart computer</td>
+                                        <td> shutdown /r</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Resultant Set of Policy</td>
+                                        <td>rsop.msc</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Security Center</td>
+                                        <td>wscui.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Screen Resolution</td>
+                                        <td>desk.cpl</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Shutdown computer</td>
+                                        <td>shutdown</td>
+                                    </tr>
+                                    <tr>
+                                        <td>System Configuration Editor</td>
+                                        <td>sysedit</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>System Configuration Utility</td>
+                                        <td>msconfig</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Task Scheduler</td>
+                                        <td>taskschd.msc</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>User Account Management</td>
+                                        <td>nusrmgr.cpl</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Windows Firewall</td>
+                                        <td>wf.msc</td>
+                                    </tr>
+                                    <tr class="alt">
+                                        <td>Windows Update</td>
+                                        <td>wuapp.exe</td>
+                                    </tr>
+                                </table>
+                            </body>
+                        </html>') | Out-Null
+        $filename = 'Shortcut-CheatSheet.html'
+        $html.ToString() | Out-File -FilePath ('{0}\{1}' -f $FilePath, $filename)
+    }
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Get disk space statistics
+
+.DESCRIPTION
+    Query hard drives in Win32_LogicalDisk for size and freespace
+    in GB and percent of diskspace still free using a CIM session
+
+.EXAMPLE
+    Get-d00mDiskSpace
+
+    This example queries Win32_LogicalDisk on the local machine
+    and gets freespace (GB), size (GB), and percent free for each
+    disk using default credentials through a CIM session
+
+.EXAMPLE
+    Get-d00mDiskSpace -ComputerName Computer1, Computer2
+
+    This example queries Win32_LogicalDisk on the remote computers,
+    Computer1 and Computer2, and gets freespace (GB), size (GB), and 
+    percent free for each disk using default credentials through CIM
+    sessions
+
+.EXAMPLE
+    'Computer1' | Get-d00mDiskSpace -Credential (Get-Credential)
+
+    This example queries Win32_LogicalDisk on the piped in computer
+    name, Computer1, and gets freespace (GB), size (GB), and percent
+    free for each disk using specified credentials through a CIM
+    session
+
+#>
+function Get-d00mDiskSpace
+{
+    [CmdletBinding()]
+    param
+    (
+        #Computers to query disk space
+        [parameter(ValueFromPipeline = $true,
+                   ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        #Credentials to use for accessing computer
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+            try
+            {
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $cimSession = New-CimSession @sessionParams
+
+                $cimParams = @{ClassName  = 'Win32_LogicalDisk'
+                               CimSession = $cimSession
+                               Filter     = 'DriveType<>5'}
+                Get-CimInstance @cimParams | ForEach-Object {
+                    New-Object -TypeName psobject -Property @{ComputerName = $computer
+                                                              DeviceId     = $_.DeviceID
+                                                              VolumeName   = $_.VolumeName
+                                                              Size         = [math]::Round($_.Size/1GB)
+                                                              FreeSpace    = [math]::Round($_.FreeSpace/1GB)
+                                                              PercentFree  = [math]::Round(($_.FreeSpace/$_.Size)*100)}
+                } | Write-Output
+            }
+
+            catch
+            {
+                throw
+            }
+
+            Write-Verbose -Message ('{0} : {1} : End execution' -f $cmdletName, $computer)
+        }
+    }
+
+    end
+    {
+        $end = ($(Get-Date) - $start).TotalMilliseconds
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+    }
+}
+
+
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
                               Get-d00mExcuse, 
@@ -1760,4 +2185,7 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               Get-d00mServiceReport, 
                               New-d00mColorFlood,
                               Get-d00mSayThings,
-                              Add-d00mChocolateyPackageSource
+                              Add-d00mChocolateyPackageSource,
+                              New-d00mPassword,
+                              New-d00mShortcutCheatSheet,
+                              Get-d00mDiskSpace
