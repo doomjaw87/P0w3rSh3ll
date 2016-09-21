@@ -13,9 +13,9 @@
     begin
     {
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, 
-                                                                 $start)
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -52,9 +52,9 @@
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -71,9 +71,9 @@ function Disconnect-d00mFrontera
     begin
     {
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, 
-                                                                 $start)
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -91,9 +91,9 @@ function Disconnect-d00mFrontera
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -138,9 +138,10 @@ function Get-d00mExcuse
     begin
     {
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
         $counter = 1
+        $timer.Start()
     }
 
     process
@@ -221,9 +222,9 @@ function Get-d00mExcuse
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -287,9 +288,10 @@ function Get-d00mHardwareReport
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1065,9 +1067,9 @@ function Get-d00mHardwareReport
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1130,9 +1132,10 @@ function Get-d00mSoftwareReport
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1306,9 +1309,9 @@ function Get-d00mSoftwareReport
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1366,10 +1369,10 @@ function Get-d00mServiceReport
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, 
-                                                                 $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1496,9 +1499,9 @@ function Get-d00mServiceReport
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1601,7 +1604,9 @@ function Get-d00mSayThings
         $voice = New-Object -TypeName System.Speech.Synthesis.SpeechSynthesizer
         $voice.SelectVoiceByHints($Gender)
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start = Get-Date
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1627,11 +1632,11 @@ function Get-d00mSayThings
 
     end
     {
+        $timer.Stop()
         Write-Verbose -Message ('{0} : Killing $voice object' -f $cmdletName)
         $voice.Dispose()
-        $end = $($(Get-Date) - $start).TotalMilliseconds
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1681,9 +1686,10 @@ function Add-d00mChocolateyPackageSource
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1748,9 +1754,9 @@ function Add-d00mChocolateyPackageSource
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1787,9 +1793,10 @@ function New-d00mPassword
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -1816,9 +1823,9 @@ function New-d00mPassword
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -1834,9 +1841,10 @@ function New-d00mShortcutCheatSheet
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -2065,9 +2073,9 @@ function New-d00mShortcutCheatSheet
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
@@ -2121,9 +2129,10 @@ function Get-d00mDiskSpace
 
     begin
     {
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
-        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, $start)
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
     }
 
     process
@@ -2170,9 +2179,9 @@ function Get-d00mDiskSpace
 
     end
     {
-        $end = ($(Get-Date) - $start).TotalMilliseconds
+        $timer.Stop()
         Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
-        Write-Verbose -Message ('Total execution time: {0} ms' -f $end)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
 
