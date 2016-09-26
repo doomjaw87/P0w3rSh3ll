@@ -2186,6 +2186,139 @@ function Get-d00mDiskSpace
 }
 
 
+<#
+.SYNOPSIS
+    Checks for and install PowerShell module updates
+
+.DESCRIPTION
+    Checks for PowerShell module updates through PowerShellGet
+
+.EXAMPLE
+    Get-d00mModuleUpdate
+
+    This example iterates through all the locally installed PowerShell
+    modules, checks for the latest version, and compares the returned 
+    version information to the locally installed module version. If the
+    returned version is greater than the locally installed module version,
+    the function will return True for that module, otherwise false.
+
+.EXAMPLE
+    Get-d00mModuleUpdate -Update
+
+    This example iterates through all the locally installed PowerShell
+    modules, checks for the latest version, and compares the returned
+    version information to the locally installed module version. If the
+    returned version is greater than the locally installed module version,
+    the function will try to install the latest version.
+
+    NOTE: If the module being updated is installed from a non-trusted source,
+          the function will ask for each module update to confirm.
+
+.EXAMPLE
+    Get-d00mModuleUpdate -Update -Force
+
+    This example iterates through all the locally installed Powershell
+    modules, checks for the latest version, and compares the returned
+    version information to the locally installed module version. If the
+    returned version is greater than the locally installed module version,
+    the function will try to install the latest version. With with Force switch,
+    the function will not ask to confirm for any modules installed from a non-
+    trusted source.
+#>
+function Get-d00mModuleUpdate
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter()]
+        [switch]$Update,
+
+        [parameter()]
+        [switch]$Force
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        if ($Update)
+        {
+            Get-InstalledModule | ForEach-Object {
+                try
+                {
+                    Write-Verbose -Message ('{0} : {1} : Checking for updates' -f $cmdletName, $_.Name)
+                    $module      = Find-Module -Name $_.Name -ErrorAction Stop
+                    $newVersion  = $module.Version
+                    $needsupdate = $_.Version -lt $newVersion
+                }
+                catch
+                {
+                    $newVersion  = 'no longer available'
+                    $needsupdate = $true
+                }
+                Write-Verbose -Message ('{0} : {1} : Local version : {2}' -f $cmdletName, $_.Name, $_.Version)
+                Write-Verbose -Message ('{0} : {1} : Latest version : {2}' -f $cmdletName, $_.Name, $newVersion)
+                Write-Verbose -Message ('{0} : {1} : Needs update : {2}' -f $cmdletName, $_.Name, $needsupdate)
+                if ($needsUpdate)
+                {
+                    try
+                    {
+                        Write-Verbose -Message ('{0} : {1} : Updating...' -f $cmdletName, $_.Name)
+                        $params = @{Name = $_.Name}
+                        if ($force)
+                        {
+                            $params.Add('Force', $true)
+                        }
+                        Update-Module @params
+                    }
+                    catch
+                    {
+                        throw
+                    }   
+                }
+            }
+        }
+
+        else
+        {
+            Get-InstalledModule | ForEach-Object {
+                Try
+                {
+                    $module      = Find-Module -Name $_.Name -ErrorAction Stop
+                    $newVersion  = $module.Version
+                    $needsUpdate = $_.Version -lt $newVersion
+                }
+                catch
+                {
+                    $newVersion  = 'no longer available'
+                    $needsupdate = $true
+                }
+
+                $_ | Add-Member -MemberType NoteProperty -Name VersionAvailable -Value $newVersion
+                $_ | Add-Member -MemberType NoteProperty -Name NeedsUpdate -Value $needsUpdate
+
+                Write-Output $_
+            } | Select-Object -Property Name, NeedsUpdate, Version, VersionAvailable |
+            Out-GridView
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+
+
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
                               Get-d00mExcuse, 
@@ -2197,4 +2330,5 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               Add-d00mChocolateyPackageSource,
                               New-d00mPassword,
                               New-d00mShortcutCheatSheet,
-                              Get-d00mDiskSpace
+                              Get-d00mDiskSpace,
+                              Get-d00mModuleUpdate
