@@ -87,22 +87,17 @@ function Get-d00mAdUserReport
                         </br>
                         <table>
                             <tr class=`"heading`">
-                                <td>CannotChangePassword</td>
-                                <td>Enabled</td>
-                                <td>LastBadPasswordAttempt</td>
-                                <td>Company</td>
-                                <td>Description</td>
                                 <td>DisplayName</td>
-                                <td>PasswordLastSet</td>
-                                <td>Department</td>
-                                <td>PasswordNeverExpires</td>
-                                <td>WhenChanged</td>
-                                <td>ObjectGuid</td>
-                                <td>WhenCreated</td>
+                                <td>SamAccountName</td>
                                 <td>EmailAddress</td>
-                                <td>PasswordExpired</td>
-                                <td>ObjectSID</td>
-                                <td>CanicalName</td>
+                                <td>Department</td>
+                                <td>Description</td>
+                                <td>Title</td>
+                                <td>UserPrincipalName</td>
+                                <td>PasswordNeverExpires</td>
+                                <td>WhenCreated</td>
+                                <td>Enabled</td>
+                                <td>LockedOut</td>
                                 <td>LastLogonDate</td>
                             </tr>") | Out-Null
 
@@ -120,22 +115,17 @@ function Get-d00mAdUserReport
                     }
 
                     $html.AppendLine("
-                                <td>$($adUser.CannotChangePassword)</td>
-                                <td>$($adUser.Enabled)</td>
-                                <td>$($adUser.LastBadPasswordAttempt)</td>
-                                <td>$($adUser.Company)</td>
-                                <td>$($adUser.Description)</td>
                                 <td>$($adUser.DisplayName)</td>
-                                <td>$($adUser.PasswordLastSet)</td>
-                                <td>$($adUser.Department)</td>
-                                <td>$($adUser.PasswordNeverExpires)</td>
-                                <td>$($adUser.WhenChanged)</td>
-                                <td>$($adUser.ObjectGuid)</td>
-                                <td>$($adUser.WhenCreated)</td>
+                                <td>$($adUser.SamAccountName)</td>
                                 <td>$($adUser.EmailAddress)</td>
-                                <td>$($adUser.PasswordExpired)</td>
-                                <td>$($adUser.ObjectSID)</td>
-                                <td>$($adUser.CanicalName)</td>
+                                <td>$($adUser.Department)</td>
+                                <td>$($adUser.Description)</td>
+                                <td>$($adUser.Title)</td>
+                                <td>$($adUser.UserPrincipalName)</td>
+                                <td>$($adUser.PasswordNeverExpires)</td>
+                                <td>$($adUser.WhenCreated)</td>
+                                <td>$($adUser.Enabled)</td>
+                                <td>$($adUser.LockedOut)</td>
                                 <td>$($adUser.LastLogonDate)</td>
                             </tr>") | Out-Null
                     $count++

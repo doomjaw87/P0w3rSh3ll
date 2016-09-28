@@ -2362,7 +2362,6 @@ function Get-d00mModuleUpdate
     This example sets PowerShell as the default shell on Computer1 and restarts Computer1
     after execution
 #>
-
 function Set-d00mPowerShellDefaultShell
 {
     [CmdletBinding(DefaultParameterSetName = "Computer")]
@@ -2549,6 +2548,109 @@ function Set-d00mPowerShellDefaultShell
 }
 
 
+<#
+.SYNOPSIS
+    Retrieve OS and processor architecture (32 or 64)
+
+.DESCRIPTION
+    Query Win32_Processor.DataWidth and Win32_OperatingSystem.OSArchitecture for
+    32 or 64-bit
+
+.EXAMPLE
+    Get-d00mArchitecture
+
+    This example queries Win32_Processor.DataWidth and Win32_OperatingSystem.OSArchitecture
+    for 32 or 64-bit on the local computer using default credentials
+
+.EXAMPLE
+    Get-d00mArchitecture -ComputerName computer1, computer2 -Credential (Get-Credential)
+
+    This example queries Win32_Processor.DataWidth and Win32_OperatingSystem.OSArchitecture
+    on the remote computers, computer1 and computer2, for 32 or 64-bit using the supplied
+    credentials
+#>
+function Get-d00mArchitecture
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(ValueFromPipeline,
+                   ValueFromPipelineByPropertyName,
+                   Position=0)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            Write-Verbose -Message ('{0} : {1} : Begin processing' -f $cmdletName, $computer)
+            $sessionParams = @{ComputerName = $computer
+                               ErrorAction  = 'Stop'}
+            if ($Credential -ne $null)
+            {
+                $sessionParams.Add('Credential', $Credential)
+                Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+            }
+            else
+            {
+                Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+            }
+            
+            $session = New-CimSession @sessionParams
+
+            Write-Verbose -Message ('{0} : {1} : Getting Win32_Processor.DataWidth' -f $cmdletName, $computer)
+            $procArch = Get-CimInstance -CimSession $session -ClassName Win32_Processor -Property DataWidth
+
+            Write-Verbose -Message ('{0} : {1} : Getting Win32_OperatingSystem.OSArchitecture' -f $cmdletName, $computer)
+            $osArch   = Get-CimInstance -CimSession $session -ClassName Win32_OperatingSystem -Property OSArchitecture
+            
+            Remove-CimSession -CimSession $session
+
+            if ($procArch.Count -gt 1)
+            {
+                Write-Verbose -Message ('{0} : {1} : Detected more than 1 processor' -f $cmdletName, $computer)
+                foreach ($p in $procArch)
+                {
+                    New-Object -TypeName psobject -Property @{ComputerName          = $computer
+                                                              ProcessorArchitecture = ('{0} : {1}' -f $p.DeviceID, $p.DataWidth)
+                                                              OSArchitecture        = $osArch.OSArchitecture} |
+                        Write-Output
+                }
+            }
+            else
+            {
+                Write-Verbose -Message ('{0} : {1} : Detected 1 processor' -f $cmdletName, $computer)
+                New-Object -TypeName psobject -Property @{ComputerName          = $computer
+                                                          ProcessorArchitecture = ('{0} : {1}' -f $procArch.DeviceID, $procArch.DataWidth)
+                                                          OSArchitecture        = $osArch.OSArchitecture} |
+                    Write-Output
+            }
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+
+
+
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
                               Get-d00mExcuse, 
@@ -2562,4 +2664,5 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               New-d00mShortcutCheatSheet,
                               Get-d00mDiskSpace,
                               Get-d00mModuleUpdate,
-                              Set-d00mPowerShellDefaultShell
+                              Set-d00mPowerShellDefaultShell,
+                              Get-d00mArchitecture
