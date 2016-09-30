@@ -1,5 +1,4 @@
-﻿Clear-Host
-
+﻿BREAK
 <#############################
 # Listing Enumeration Values #
 ##############################
@@ -51,3 +50,35 @@ and foreground color.
 $background, $foreground = 0..15 | Get-Random -Count 2
 $host.UI.RawUI.ForegroundColor = $foreground
 $host.UI.RawUI.BackgroundColor = $background
+
+
+<#################################
+# Creating Your Own Enumerations #
+##################################
+
+Beginning in PowerShell 5, you can create your own enumerations using the
+"Enum" keyword.
+#>
+#requires -Version 5.0
+
+Enum ComputerType
+{
+    ManagedServer
+    ManagedClient
+    Server
+    Client
+}
+
+function Connect-Computer
+{
+    param
+    (
+        [ComputerType]$Type,
+        [string]$name
+    )
+    ('ComputerName: {0}' -f $name) | Write-Output
+    ('Type: {0}' -f $Type) | Write-Output
+}
+Connect-Computer -Name 'Testing' -Type ManagedServer
+
+
