@@ -112,3 +112,23 @@ Show-d00mMessageBox @params
 
 
 
+<##################################
+# FANCY INPUT BOXES AS PARAMETERS #
+###################################
+
+You can have fancy input boxes for parameter input in PowerShell Functions!
+#>
+Add-Type -AssemblyName Microsoft.VisualBasic
+function Get-d00mFancyInputBox
+{
+    param
+    (
+        $name  = $([Microsoft.VisualBasic.Interaction]::InputBox('Enter name', 'Name', $env:USERNAME)),
+
+        $color = $([Microsoft.VisualBasic.Interaction]::InputBox('Enter a color', 'Color'))
+    )
+    
+    "You entered $name"  | Write-Output
+    "You entered $color" | Write-Output
+}
+Get-d00mFancyInputBox
