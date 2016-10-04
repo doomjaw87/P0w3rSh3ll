@@ -2775,6 +2775,147 @@ function ConvertFrom-d00mEncryptedString
     }
 }
 
+
+<#
+.SYNOPSIS
+    Connect to a VM
+
+.DESCRIPTION
+    Connect to a VM on a remote/local Hyper-V host using default credentials
+
+    THE SERVER MUST BE RUNNING SERVER 2016+
+
+.EXAMPLE
+    Connect-d00mVm -VmName vm1
+
+    This example will connect to the local Hyper-V host to a virtual machine
+    named vm1 using the default credentials
+
+.EXAMPLE
+    Connect-d00mVm -ServerName server1 -VmName vm1
+
+    This example will connect to the remote Hyper-V host named server1 to a
+    virtual machine named vm1 using the default credentials
+#>
+function Connect-d00mVm
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter()]
+        [string]$ServerName = $env:COMPUTERNAME,
+
+        [parameter(Mandatory = $true)]
+        [string]$VmName
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $timer = New-Object -TypeName System.Diagnostics.Stopwatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        try
+        {
+            $params = @{FilePath     = 'VmConnect'
+                        ArgumentList = $ServerName, $VmName
+                        ErrorAction  = 'Stop'}
+            Start-Process @params
+        }
+
+        catch
+        {
+            throw
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.ElapsedMilliseconds)
+    }
+}
+
+
+<#
+function Enable-d00mFirewallRuleGroup
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter()]
+        [pscredential]$Credential,
+
+        [ValidateSet('File and Printer Sharing', 'Remote Management', 'Volume Management', 'Event Log Management',
+                     'Performance Monitor Management', 'Service Management', 'Scheduled Task Management', 'Firewall Management')]
+        [parameter()]
+        [string[]]$RulesToEnable
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            try
+            {
+                $sessionParams = @{ComputerName = $Computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using specified credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $session = New-PSSession @sessionParams
+
+                foreach ($rule in $RulesToEnable)
+                {
+                    Invoke-Command -Session $session -ScriptBlock {
+                        netsh advfirewall firewall set rule group="$($args[0])" new enable=yes
+                    } -ArgumentList $rule
+                }
+
+                Remove-PSSession -Session $session
+            }
+            catch
+            {
+                throw
+            }
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+#>
+
+
+
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
                               Get-d00mExcuse, 
@@ -2791,4 +2932,6 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               Set-d00mPowerShellDefaultShell,
                               Get-d00mArchitecture,
                               ConvertTo-d00mEncryptedString,
-                              ConvertFrom-d00mEncryptedString
+                              ConvertFrom-d00mEncryptedString,
+                              Connect-d00mVm
+                              #Enable-d00mFirewallRuleGroup
