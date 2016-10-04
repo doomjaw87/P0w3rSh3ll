@@ -2649,7 +2649,131 @@ function Get-d00mArchitecture
 }
 
 
+<#
+.SYNOPSIS
+    Encrypt a string
 
+.DESCRIPTION
+    Convert a string to a Base64 encoded encrypted string
+
+.EXAMPLE
+    ConvertTo-d00mEncryptedString -StringToEncrypt 'Hello World'
+
+    This example will convert 'Hello World' to a Base64 encoded
+    encrypted string
+
+.EXAMPLE
+    'Things and stuff' | ConvertTo-d00mEncryptedString
+
+    This example will convert the piped in string, 'Things and stuff' to
+    a Base64 encoded encrypted string
+
+.EXAMPLE
+    Read-Content c:\file.txt | ConvertTo-d00mEncryptedString
+
+    This example will read the contents of the file and convert the contents
+    into a Base64 encoded encrypted string
+#>
+function ConvertTo-d00mEncryptedString
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(Mandatory,
+                   ValueFromPipeline)]
+        [string]$StringToEncrypt
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        $eBytes = New-Object System.Collections.ArrayList
+        $pBytes = [System.Text.Encoding]::UTF32.GetBytes($StringToEncrypt)
+        foreach ($byte in $pBytes)
+        {
+            $eBytes.Add($byte*2) | Out-Null
+        }
+        [System.Convert]::ToBase64String($eBytes) | Write-Output
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.ElapsedMilliseconds)
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Decrypt a string
+
+.DESCRIPTION
+    Convert a Base64 encoded encrypted string to plain text
+
+.EXAMPLE
+    ConvertFrom-d00mEncryptedString -StringToDecrypt '6AAAAMoAAADmAAAA6AAAAA==
+
+    This example will decrypt the specified string value from a Base64
+    encoded encrypted string to plain text
+
+.EXAMPLE
+    Read-Content c:\encrypted.txt | ConvertFrom-d00mEncryptedString
+
+    This example will decrypt the contents of the file from a Base64
+    encoded encrypted string to plain text
+
+.EXAMPLE
+    ConvertTo-d00mEncryptedString 'Hello' | ConvertFrom-d00mEncryptedString
+
+    This example will encrypt the string 'Hello' into a Base64 encrypted
+    string and then decrypt the value by piping in the Base64 encrypted
+    string to the ConvertFrom-d00mEncryptedString function
+#>
+function ConvertFrom-d00mEncryptedString
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(Mandatory,
+                   ValueFromPipeline)]
+        [string]$StringToDecrypt
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        $b64 = [System.Convert]::FromBase64String($StringToDecrypt)
+        $eBytes = New-Object -TypeName System.Collections.ArrayList
+        foreach ($byte in $b64)
+        {
+            $eBytes.Add($byte / 2) | Out-Null
+        }
+        [System.Text.Encoding]::UTF32.GetString($eBytes) | Write-Output
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.ElapsedMilliseconds)
+    }
+}
 
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
@@ -2665,4 +2789,6 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               Get-d00mDiskSpace,
                               Get-d00mModuleUpdate,
                               Set-d00mPowerShellDefaultShell,
-                              Get-d00mArchitecture
+                              Get-d00mArchitecture,
+                              ConvertTo-d00mEncryptedString,
+                              ConvertFrom-d00mEncryptedString
