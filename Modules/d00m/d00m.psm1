@@ -2843,6 +2843,197 @@ function Connect-d00mVm
 
 
 <#
+.SYNOPSIS
+    Enable RDP connections
+
+.DESCRIPTION
+    Configures the registry to allow secure RDP connections and enables the Remote Administration
+    and Remote Desktop firewall rule group
+
+.EXAMPLE
+    Enable-d00mRdp
+
+    This example will configure the registry to allow secure RDP connections and enables the 
+    Remote Administration and Remote Desktop firewall rule group on the local computer
+
+.EXAMPLE
+    Enable-d00mRdp -ComputerName Computer1, Computer2 -Credential (Get-Credential)
+
+    This example will configure the registry to allow secure RDP connections and enables the
+    Remote Administration and Remote Desktop firewall rule group on the remote computers,
+    Computer1 and Computer2, using the supplied credentials
+
+.EXAMPLE
+    Read-Content C:\file.txt | Enable-d00mRdp -Credential (Get-Credential)
+
+    This example will configure the registry to allow secure RDP connections and enables the
+    Remote Administration and Remote Desktop firewall rule group on the computer names found
+    in the file c:\file.txt, using the supplied credentials
+
+#>
+function Enable-d00mRdp
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(Mandatory,
+                   ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        try
+        {
+            foreach ($computer in $ComputerName)
+            {
+                Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using specified credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $session = New-PSSession @sessionParams
+
+                Invoke-Command -Session $session -ScriptBlock {
+                    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0 -Force
+                    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name UserAuthentication -Value 0 -Force
+                    netsh advfirewall firewall set rule group="Remote Administration" new enable=yes
+                    netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
+                }
+
+                Remove-PSSession -Session $session
+            }
+        }
+        catch
+        {
+            throw
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Disable RDP connections
+
+.DESCRIPTION
+    Configures the registry to disallow any RDP connections and disables the Remote Desktop firewall
+    rule group
+
+.EXAMPLE
+    Disable-d00mRdp
+
+    This example will configure the registry to disallow RDP connections and disables the
+    Remote Desktop firewall rule group on the local computer
+
+.EXAMPLE
+    Disable-d00mRdp -ComputerName Computer1, Computer2 -Credential (Get-Credential)
+
+    This example will configure the registry to disallow RDP connections and disables the 
+    Remote Desktop firewall rule group on the remote computers, Computer1 and Computer2, using
+    the supplied credentials
+
+.EXAMPLE
+    Read-Content C:\file.txt | Disable-d00mRdp -Credential (Get-Credential)
+
+    This example will configure the registry to disallow RDP connections and disables the
+    Remote Desktop firewall rule group on the computer names found in the file c:\file.txt,
+    using the supplied credentials
+#>
+function Disable-d00mRdp
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(Mandatory,
+                   ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
+        [string[]]$ComputerName = $env:COMPUTERNAME,
+
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+         try
+        {
+            foreach ($computer in $ComputerName)
+            {
+                Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using specified credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+                $session = New-PSSession @sessionParams
+
+                Invoke-Command -Session $session -ScriptBlock {
+                    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 1 -Force
+                    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name UserAuthentication -Value 1 -Force
+                    netsh advfirewall firewall set rule group="Remote Desktop" new enable=no
+                }
+
+                Remove-PSSession -Session $session
+            }
+        }
+        catch
+        {
+            throw
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+<#
 function Enable-d00mFirewallRuleGroup
 {
     [CmdletBinding()]
@@ -2915,6 +3106,233 @@ function Enable-d00mFirewallRuleGroup
 #>
 
 
+<#
+.SYNOPSIS
+    Generate Event Log HTML Report
+
+.DESCRIPTION
+    Iterate through available event logs for Error, Warning, or FailureAudit
+    event entires generated in the past 24 hours and saves the report in the
+    current directory using current credentials by default
+    
+.EXAMPLE
+    Get-d00mEventLogReport -ComputerName Computer1
+
+    This example iterates through available event logs on the remote computer
+    Computer1 for Error, Warning, or FailureAudit event entries generated
+    in the past 24 hours and saves the report in the current directory using
+    current credentials
+
+.EXAMPLE
+    'Computer1', 'Computer2' | Get-d00mEventLogReport -Credential (Get-Credential)
+
+    This example iterates through available event logs on the remote computers
+    piped into the function for Error, Warning, or FailureAudit event entries
+    generated in the past 24 hours and saves the report in the current directory
+    using the specified credentials
+
+.EXAMPLE
+    Get-d00mEventLogReport -Credential (Get-Credential) -FilePath \\server1\share
+
+    This example iterates through available event logs on the local computer
+    for Error, Warning, or FailureAudit event entries generated in the past 24
+    generated in the past 24 hours and saves the report in the specified directory
+    using the specified credentials
+#>
+function Get-d00mEventLogReport
+{
+    [CmdletBinding()]
+    param
+    (
+        [parameter(ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
+        [string[]]$ComputerName,
+
+        [parameter()]
+        [pscredential]$Credential,
+
+        [parameter()]
+        [string]$FilePath = (Get-Location)
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $start      = Get-Date
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        foreach ($computer in $ComputerName)
+        {
+            try
+            {
+                Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+
+                $sessionParams = @{ComputerName = $computer
+                                   ErrorAction  = 'Stop'}
+                if ($Credential -ne $null)
+                {
+                    $sessionParams.Add('Credential', $Credential)
+                    Write-Verbose -Message ('{0} : {1} : Using supplied credentials' -f $cmdletName, $computer)
+                }
+                else
+                {
+                    Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+                }
+
+                $session = New-PSSession @sessionParams
+                $html = New-Object -TypeName System.Text.StringBuilder
+                $html.AppendLine("
+                <html>
+                    <head>
+                        <title>$($computer) Event Log Report</title>
+                        <style>
+                            table, tr, td {
+                                border: 1px solid green;
+                                border-collapse: collapse;
+                            }
+
+                            tr.alt td {
+                                background-color: `#171717;
+                            }
+
+                            tr.heading td {
+                                font-weight: bold;
+                                text-align: center;
+                                font-size: larger;
+                                color: white;
+                                background-color: `#333333;
+                            }
+            
+                            body {
+                                background-color: black;
+                                color: `#bdbdbd;
+                                font-family: lucida consolas, monospace;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <table>
+                            <tr class=`"heading`">
+                                <td colspan=`"2`">$($computer)</td>
+                            </tr>
+                            <tr>
+                                <td>Report</td>
+                                <td>Event Log Report</td>
+                            </tr>
+                            <tr>
+                                <td>Date Range</td>
+                                <td>$((Get-Date).AddDays(-1)) - $(Get-Date)</td>
+                            </tr>
+                        </table>
+                        </br>") | Out-Null
+
+                $logs = Invoke-Command -Session $session -ScriptBlock {
+                    Get-EventLog -List -AsString | Write-Output
+                }
+
+                Write-Verbose -Message ('{0} : {1} : Found {2} available event logs' -f $cmdletName, $computer, $logs.Count)
+
+                foreach ($log in $logs)
+                {
+                    Write-Verbose -Message ('{0} : {1} : Getting {2} event log entries' -f $cmdletName, $computer, $log)
+                    $events = Invoke-Command -Session $session -ScriptBlock {
+                        $params = @{LogName     = $args[0]
+                                    After       = $((Get-Date).AddDays(-1))
+                                    EntryType   = 'Error', 'Warning', 'FailureAudit'
+                                    ErrorAction = 'SilentlyContinue'}
+                        Get-EventLog @params | Write-Output
+                    } -ArgumentList $log
+                    if ($events.Count -gt 0)
+                    {
+                        $html.AppendLine(('
+                        <table>
+                            <tr class="heading">
+                                <td colspan="5"><center>{0}</center></td>
+                            </tr>
+                            <tr class="heading">
+                                <td>TimeGenerated</td>
+                                <td>EntryType</td>
+                                <td>EventID</td>
+                                <td>Source</td>
+                                <td>Message</td>
+                            </tr>' -f $log)) | Out-Null
+                        $counter = 1
+                        foreach ($event in $events)
+                        {
+                            if ([bool]!($counter%2))
+                            {
+                                $html.AppendLine('<tr>') | Out-Null
+                            }
+                            else
+                            {
+                                $html.AppendLine('<tr class="alt">') | Out-Null
+                            }
+                            $html.AppendLine(('
+                                <td>{0}</td>
+                                <td>{1}</td>
+                                <td>{2}</td>
+                                <td>{3}</td>
+                                <td>{4}</td>
+                            </tr>' -f $event.TimeGenerated,
+                                      $event.EntryType,
+                                      $event.EventID,
+                                      $event.Source,
+                                      $event.Message)) | Out-Null
+                            $counter++
+                        }
+                        $html.AppendLine('</table></br>') | Out-Null
+                    }
+                    else
+                    {
+                        $html.AppendLine('
+                        <table>
+                            <tr class="heading">
+                                <td colspan="5"><center>{0}</center>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <center>
+                                    No Error, Critical, Failure Audit events detected! :D
+                                    </center>
+                                </td>
+                            </tr>
+                        </table>
+                        </br>' -f $log) | Out-Null
+                    }
+                }
+                $html.AppendLine('
+                    </body>
+                </html>') | Out-Null
+
+                $reportName = '{0}_EventLogReport_{1}.html' -f $computer, (Get-Date -Format 'yyyyMMdd')
+                $html.ToString() | Out-File -FilePath (Join-Path -Path $FilePath -ChildPath $reportName) -Force
+
+                Remove-PSSession -Session $session
+            }
+
+            catch
+            {
+                throw
+            }
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+
+
+
 
 Export-ModuleMember -Function Connect-d00mFrontera, 
                               Disconnect-d00mFrontera, 
@@ -2933,5 +3351,8 @@ Export-ModuleMember -Function Connect-d00mFrontera,
                               Get-d00mArchitecture,
                               ConvertTo-d00mEncryptedString,
                               ConvertFrom-d00mEncryptedString,
-                              Connect-d00mVm
+                              Connect-d00mVm,
+                              Enable-d00mRdp,
+                              Disable-d00mRdp,
+                              Get-d00mEventLogReport
                               #Enable-d00mFirewallRuleGroup
