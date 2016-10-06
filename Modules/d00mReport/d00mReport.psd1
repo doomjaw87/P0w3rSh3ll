@@ -12,7 +12,7 @@
 RootModule = 'd00mReport'
 
 # Version number of this module.
-ModuleVersion = '0.1'
+ModuleVersion = '0.2'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -101,16 +101,16 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        Tags = @('Hardware', 'Software', 'Service', 'Disk space', 'Event Log', 'Winsat', 'Report', 'Reporting')
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/LICENSE'
 
         # A URL to an icon representing this module.
-        # IconUri = ''
+        #IconUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/Modules/d00m/d00m_icon.ico'
 
         # ReleaseNotes of this module
         # ReleaseNotes = ''
