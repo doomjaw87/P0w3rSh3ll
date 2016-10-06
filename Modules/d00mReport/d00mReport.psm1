@@ -364,7 +364,7 @@ function Get-d00mHardwareReport
                                             </tr>' -f $drive.DeviceID,
                                                       $drive.Description,
                                                       $drive.DriveType)) | Out-Null
-                        if ($drive.DriveType -ne 5)
+                        if ($drive.DriveType -eq 3)
                         {
                             $percentFree = [math]::Round((($drive.Freespace)/($drive.Size))*100)
                             $status = switch ($percentFree)
