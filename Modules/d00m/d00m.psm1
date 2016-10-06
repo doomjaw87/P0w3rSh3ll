@@ -1461,3 +1461,79 @@ function Disable-d00mRdp
         Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
     }
 }
+
+
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+    
+.EXAMPLE
+
+.EXAMPLE
+
+.EXAMPLE
+
+#>
+
+function Switch-d00mMouseButton
+{
+    [CmdletBinding()]
+    param
+    (
+        [ValidateSet('Left', 'Right')]
+        [string]$Hand
+    )
+
+    begin
+    {
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        [Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
+        $swapButtons = Add-Type -MemberDefinition '
+        [DllImport("user32.dll")]
+        public static extern bool SwapMouseButton(bool swap);' -Name "NativeMethods" -Namespace "PInvoke" -PassThru
+
+        switch ($Hand)
+        {
+            'Left'
+            {
+                if ([bool][System.Windows.Forms.SystemInformation]::MouseButtonsSwapped -eq $false)
+                {
+                    $swapButtons::SwapMouseButton(([System.Windows.Forms.SystemInformation]::MouseButtonsSwapped)) |
+                        Out-Null
+                }
+                else
+                {
+                    Write-Warning -Message ('{0} : Mouse buttons already left-handed' -f $cmdletName)
+                }
+            }
+
+            'Right'
+            {
+                if ([bool][System.Windows.Forms.SystemInformation]::MouseButtonsSwapped -eq $true)
+                {
+                    $swapButtons::SwapMouseButton(([System.Windows.Forms.SystemInformation]::MouseButtonsSwapped)) | 
+                        Out-Null
+                }
+                else
+                {
+                    Write-Warning -Message ('{0} : Mouse buttons already right-handed' -f $cmdletName)
+                }
+            }
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.ElapsedMilliseconds)
+    }
+}
