@@ -1604,8 +1604,7 @@ function Add-d00mChocolateyPackageSource
                 Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
             
                 $sessionParams = @{ComputerName = $computer
-                                   ErrorAction  = 'Stop'
-                                   ArgumentList = $Trusted}
+                                   ErrorAction  = 'Stop'}
                 if ($Credential -ne $null)
                 {
                     $sessionParams.Add('Credential', $Credential)
@@ -1615,8 +1614,9 @@ function Add-d00mChocolateyPackageSource
                 {
                     Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
                 }
+                $session = New-PSSession @sessionParams
 
-                $result = Invoke-Command @sessionParams -ScriptBlock {
+                $result = Invoke-Command -Session $session -ScriptBlock {
                     If (!(Get-PackageProvider -Name chocolatey))
                     {
                         try
@@ -1638,8 +1638,8 @@ function Add-d00mChocolateyPackageSource
                     {
                         Write-Output $true
                     }
-                }
-
+                } -ArgumentList $(if($Trusted){$true}else{$false})
+                Remove-PSSession -Session $session
                 New-Object -TypeName psobject -Property @{ComputerName     = $computer
                                                           ChocolateyResult = $result
                                                           Trusted          = $Trusted} |
@@ -1691,7 +1691,11 @@ function New-d00mPassword
         #Password length
         [parameter()]
         [ValidateScript({$_ -gt 0})]
-        [int]$Length = 10
+        [int]$Length = 10,
+
+        #Write output as secure string
+        [parameter()]
+        [switch]$AsSecureString
     )
 
     begin
@@ -1721,7 +1725,16 @@ function New-d00mPassword
             $counter++
         }
 
-        Write-Output $password.ToString()
+        if ($AsSecureString)
+        {
+            $password.ToString() | 
+                ConvertTo-SecureString -AsPlainText -Force |
+                Write-Output
+        }
+        else
+        {
+            Write-Output $password.ToString()
+        }
     }
 
     end
