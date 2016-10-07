@@ -1506,8 +1506,7 @@ function Switch-d00mMouseButton
             {
                 if ([bool][System.Windows.Forms.SystemInformation]::MouseButtonsSwapped -eq $false)
                 {
-                    $swapButtons::SwapMouseButton(([System.Windows.Forms.SystemInformation]::MouseButtonsSwapped)) |
-                        Out-Null
+                    $swapButtons::SwapMouseButton($true) | Out-Null
                 }
                 else
                 {
@@ -1518,9 +1517,8 @@ function Switch-d00mMouseButton
             'Right'
             {
                 if ([bool][System.Windows.Forms.SystemInformation]::MouseButtonsSwapped -eq $true)
-                {
-                    $swapButtons::SwapMouseButton(([System.Windows.Forms.SystemInformation]::MouseButtonsSwapped)) | 
-                        Out-Null
+                { 
+                    $swapButtons::SwapMouseButton($false) | Out-Null
                 }
                 else
                 {
