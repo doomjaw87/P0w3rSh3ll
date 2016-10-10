@@ -110,7 +110,7 @@ PrivateData = @{
         ProjectUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/LICENSE'
 
         # A URL to an icon representing this module.
-        #IconUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/Modules/d00m/d00m_icon.ico'
+        IconUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/Modules/d00mReport/d00mReport_icon.ico?raw=true'
 
         # ReleaseNotes of this module
         # ReleaseNotes = ''
