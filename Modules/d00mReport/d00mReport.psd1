@@ -12,7 +12,7 @@
 RootModule = 'd00mReport'
 
 # Version number of this module.
-ModuleVersion = '0.2'
+ModuleVersion = '1.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -75,7 +75,8 @@ FunctionsToExport = 'Get-d00mHardwareReport',
                     'Get-d00mDiskSpaceReport', 
                     'Get-d00mArchitectureReport',
                     'Get-d00mEventLogReport', 
-                    'Get-d00mWinsatScoreReport'
+                    'Get-d00mWinsatScoreReport',
+                    'Get-d00mMonitorReport'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -101,7 +102,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @('Hardware', 'Software', 'Service', 'Disk space', 'Event Log', 'Winsat', 'Report', 'Reporting')
+        Tags = @('Hardware', 'Software', 'Service', 'Diskspace', 'EventLog', 'Winsat', 'Report', 'Reporting', 'Monitor', 'HTML')
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/LICENSE'
@@ -113,7 +114,8 @@ PrivateData = @{
         IconUri = 'https://github.com/doomjaw87/P0w3rSh3ll/blob/master/Modules/d00mReport/d00mReport_icon.ico?raw=true'
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = '- 20161010 - Added function that generates monitor HTML report!
+- 20161010 - First production ready release!'
 
     } # End of PSData hashtable
 

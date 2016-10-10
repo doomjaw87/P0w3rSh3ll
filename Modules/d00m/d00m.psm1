@@ -448,7 +448,6 @@ function New-d00mPassword
         if ($AsSecureString)
         {
             $password.ToString() | 
-                ConvertTo-SecureString -AsPlainText -Force |
                 Write-Output
         }
         else

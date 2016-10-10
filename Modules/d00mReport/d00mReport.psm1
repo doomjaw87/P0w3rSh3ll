@@ -1485,7 +1485,6 @@ function Get-d00mArchitectureReport
 }
 
 
-
 <#
 .SYNOPSIS
     Generate Event Log HTML Report
@@ -1798,6 +1797,205 @@ function Get-d00mWinsatScoreReport
                                                       GraphicsScore = $cim.GraphicsSCore
                                                       MemoryScore   = $cim.MemoryScore} |
                 Write-Output
+        }
+    }
+
+    end
+    {
+        $timer.Stop()
+        Write-Verbose -Message ('{0} : End execution' -f $cmdletName)
+        Write-Verbose -Message ('Total execution time: {0} ms' -f $timer.Elapsed.TotalMilliseconds)
+    }
+}
+
+
+<#
+.SYNOPSIS
+    Generate monitor HTML report
+
+.DESCRIPTION
+    Queries WMIMonitorID to generate a HTML report
+
+.EXAMPLE
+    Get-d00mMonitorReport -ComputerName Computer1
+
+    This example will query WMIMonitorID to generate a HTML report
+    on the specified computer, Computer1, saved to the current directory
+
+.EXAMPLE
+    Get-d00mMonitorReport -ComputerName Computer1, Computer2 -FilePath \\server\share
+
+    This example will query WMIMonitorID to generate a HTML report
+    for the specified computers, Computer1 and Computer2, saved to the specified
+    directory
+
+.EXAMPLE
+    $credential = Get-Credential
+    Get-Content C:\list.txt | Get-d00mMonitorReport -FilePath \\server\share -Credential $credential
+
+    This example will query WMIMonitorID to generate a HTML report
+    for the piped in computer names from the list at c:\list.txt, saved to the 
+    current directory by default using the specified credentials
+#>
+
+function Get-d00mMonitorReport
+{
+    [CmdletBinding()]
+    param
+    (
+        [alias('name')]
+        [parameter(Mandatory,
+                   ValueFromPipeline,
+                   ValueFromPipelineByPropertyName)]
+        [string[]]$ComputerName,
+
+        [parameter()]
+        [string]$FilePath = (Get-Location),
+
+        [parameter()]
+        [pscredential]$Credential
+    )
+
+    begin
+    {
+        $timer = New-Object -TypeName System.Diagnostics.StopWatch
+        $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
+        $timer.Start()
+    }
+
+    process
+    {
+        $computerTimer = New-Object -TypeName System.Diagnostics.Stopwatch
+        foreach ($computer in $ComputerName)
+        {
+            $computerTimer.Start()
+
+            $html = New-Object -TypeName System.Text.StringBuilder
+            $html.AppendLine("<html>
+                                <head>
+                                    <title>$($computer) Monitor Report</title>
+                                    <style>
+                                        table, tr, td {
+                                            border: 1px solid green;
+                                            border-collapse: collapse;
+                                        }
+
+                                        tr.alt td {
+                                            background-color: `#171717;
+                                        }
+
+                                        tr.heading td {
+                                            font-weight: bold;
+                                            text-align: center;
+                                            font-size: larger;
+                                            color: white;
+                                            background-color: `#333333;
+                                        }
+
+                                        body {
+                                            background-color: black;
+                                            color: `#bdbdbd;
+                                            font-family: lucida consolas, monospace;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <table>
+                                        <tr class=`"heading`">
+                                            <td colspan=`"2`">$($computer)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Report</td>
+                                            <td>Date</td>
+                                        </tr>
+                                        <tr>
+                                            <td>$($cmdletName)</td>
+                                            <td>$(Get-Date)</td>
+                                        </tr>
+                                    </table>
+                                </br>") | Out-Null
+
+            Write-Verbose -Message ('{0} : {1} : Begin execution' -f $cmdletName, $computer)
+
+            $params = @{ComputerName = $computer
+                        ErrorAction  = 'Stop'}
+            if ($Credential -ne $null)
+            {
+                $params.Add('Credential', $Credential)
+                Write-Verbose -Message ('{0} : {1} : Using specified credentials' -f $cmdletName, $computer)
+            }
+            else
+            {
+                Write-Verbose -Message ('{0} : {1} : Using default credentials' -f $cmdletName, $computer)
+            }
+
+            Try
+            {
+                Write-Verbose -Message ('{0} : {1} : Opening CIM session' -f $cmdletName, $computer)
+                $session = New-CimSession @params
+
+                Write-Verbose -Message ('{0} : {1} : Getting root/WMI/WmiMonitorID properties' -f $cmdletName, $computer)
+                $cimParams = @{CimSession = $session
+                               ClassName  = 'WmiMonitorID'
+                               Namespace  = 'root/WMI'}
+                Get-CimInstance @cimParams | ForEach-Object {
+                    if ($_.UserFriendlyName)
+                    {
+                        $html.AppendLine(('
+                        <table>
+                            <tr class="heading">
+                                <td colspan="2">{0}</td>
+                            </tr>
+                            <tr class="alt">
+                                <td>UserFriendlyName</td>
+                                <td>{1}</td>
+                            </tr>
+                            <tr>
+                                <td>SerialNumber</td>
+                                <td>{2}</td>
+                            </tr>
+                            <tr class="alt">
+                                <td>ProductCodeID</td>
+                                <td>{3}</td>
+                            </tr>
+                            <tr>
+                                <td>ManufacturerName</td>
+                                <td>{4}</td>
+                            </tr>
+                            <tr class="alt">
+                                <td>Active</td>
+                                <td>{5}</td>
+                            </tr>
+                            <tr>
+                                <td>YearOfManufacture</td>
+                                <td>{6}</td>
+                            </tr>
+                        </table>
+                        </br>' -f $_.InstanceName,
+                                  [System.Text.Encoding]::ASCII.GetString($_.UserFriendlyName),
+                                  [System.Text.Encoding]::ASCII.GetString($_.SerialNumberID),
+                                  [System.Text.Encoding]::ASCII.GetString($_.ProductCodeID),
+                                  [System.Text.Encoding]::ASCII.GetString($_.ManufacturerName),
+                                  $_.Active,
+                                  $_.YearOfManufacture)) | Out-Null
+                    }
+                }
+                $html.AppendLine('</body></html>') | Out-Null
+
+                Write-Verbose -Message ('{0} : {1} : Removing CIM session' -f $cmdletName, $computer)
+                Remove-CimSession -CimSession $session
+
+                Write-Verbose -Message ('{0} : {1} : Saving HTML report to {2}' -f $cmdletName, $comuter, $FilePath)
+                $html.ToString() | Out-File -FilePath (Join-Path -Path $FilePath -ChildPath ('{0}_MonitorReport_{1}.html' -f $computer, $(Get-Date -Format 'yyyyMMdd'))) -Force
+            }
+            catch
+            {
+                throw
+            }
+            $computerTimer.Stop()
+            Write-Verbose -Message ('{0} : {1} : End execution. {2} ms' -f $cmdletName, $computer, $computerTimer.ElapsedMilliseconds)
+            $computerTimer.Reset()
         }
     }
 
