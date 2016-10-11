@@ -3,7 +3,11 @@
 .SYNOPSIS
 
 .DESCRIPTION
-    
+
+.PARAMETER
+
+.PARAMETER
+
 .EXAMPLE
 
 .EXAMPLE
@@ -23,7 +27,6 @@ function
     {
         $timer = New-Object -TypeName System.Diagnostics.StopWatch
         $cmdletName = $PSCmdlet.MyInvocation.MyCommand.Name
-        $start      = Get-Date
         Write-Verbose -Message ('{0} : Begin execution : {1}' -f $cmdletName, (Get-Date))
         $timer.Start()
     }
