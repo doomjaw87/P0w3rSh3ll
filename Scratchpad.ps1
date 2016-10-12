@@ -1,6 +1,6 @@
 ﻿Clear-host
 
-$creds = Get-Credential
+#$creds = Get-Credential
 <#
 $uri = 'https://outlook.office.com/api/v2.0/me/calendars'
 Invoke-RestMethod -UseBasicParsing $uri -Credential $creds -Method Get
@@ -15,8 +15,8 @@ Invoke-RestMethod -UseBasicParsing $uri -Credential $creds -Method Get
 #Invoke-RestMethod -Uri 'https://outlook.office365.com/api/v1.0/users/namos@teamfrontera.com' -Credential $creds
 #Invoke-RestMethod -Uri "https://outlook.office365.com/api/v1.0/users('namos@teamfrontera.com')" -Credential $creds
 
-
-$uri = "https://outlook.office365.com/api/v1.0/users('asparkman@teamfrontera.com')/events"
+#$uri = 'https://outlook.office.com/api/v2.0/me/calendars'
+$uri = "https://outlook.office365.com/api/v1.0/me/events"
 
 <#
 $body = @{Subject = 'O365 Calendar API2!'
@@ -33,6 +33,10 @@ $body = @{Subject = 'O365 Calendar API2!'
         }
 #>
 
+
+
+
+<#
 $body = @{body = @{ContentType = 'HTML'
                    Content = 'Testing from my function!'}
           StartTimeZone = 'Central Standard Time'
@@ -41,8 +45,46 @@ $body = @{body = @{ContentType = 'HTML'
           Start = '2016-09-08T19:43:00-06:00'
           End = '2016-09-09T19:43:00-06:00'
           EndTimeZone = 'Central Standard Time'}
+#>
 
-$body = @{Subject = 'Testing again'
+$year = 2016
+while ($year -le 2020)
+{
+    $month = 1
+    
+    while ($month -le 12)
+    {
+        $daysInMonth = [DateTime]::DaysInMonth($year, $month)
+
+        $day = 1
+
+        While ($day -lt $daysInMonth)
+        {
+            Get-Date -Year $year -Month $month -Day $day
+
+            $body = [ordered]@{Subject = 'Do Not Care'
+                      Body = @{ContentType='HTML'
+                               Content='Whatever it is - do not care. -AS'}
+                      Start = ('{0}T00:00:01-6:00' -f (Get-Date -Year $year -Month $month -Day $day).ToString('yyyy-MM-dd'))
+                      StartTimeZone = 'Central Standard Time'
+                      End   = ('{0}T23:59:59-6:00' -f (Get-Date -Year $year -Month $month -Day $day).ToString('yyyy-MM-dd'))
+                      EndTimeZone = 'Central Standard Time'
+                      ShowAs = 'Busy'
+                      IsAllDay = $true
+                      }
+                      $header = @{"outlook.timezone"="Central Standard Time"}
+                      Invoke-RestMethod -Uri $uri -Method Post -Body $(Convertto-Json $body -Depth 100) -Credential $creds -ContentType 'application/json' -Verbose -Headers $header
+                      Start-Sleep -Seconds 1
+            $day++
+        }
+        $month++
+    }
+    $year++
+}
+
+
+BREAK
+$body = [ordered]@{Subject = 'Testing again'
           Body    = @{ContentType = 'HTML'
                       Content     = 'Why the fuck is this not working?'}
           Start   = '2016-09-10T19:43:00-06:00'
