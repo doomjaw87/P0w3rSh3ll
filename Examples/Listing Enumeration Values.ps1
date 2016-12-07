@@ -1,6 +1,6 @@
 ﻿BREAK
 <#############################
-# Listing Enumeration Values #
+| Listing Enumeration Values |
 ##############################
 
 If you'd like to know what the allowed string values are for a parameter
@@ -30,7 +30,7 @@ If it is, like in this example, you can list its names:
 
 
 <###################################
-# Understanding Enumeration Values #
+| Understanding Enumeration Values |
 ####################################
 
 Most enumerations are just an easy way of labelling numeric values.
@@ -53,7 +53,7 @@ $host.UI.RawUI.BackgroundColor = $background
 
 
 <#################################
-# Creating Your Own Enumerations #
+| Creating Your Own Enumerations |
 ##################################
 
 Beginning in PowerShell 5, you can create your own enumerations using the

@@ -1,5 +1,5 @@
 ﻿<#####################
-# Illegal Characters #
+| Illegal Characters |
 #####################>
 
 # Path to Check

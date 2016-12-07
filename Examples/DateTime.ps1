@@ -1,5 +1,5 @@
 ﻿<#########################
-# GETTING UNIVERSAL TIME #
+| GETTING UNIVERSAL TIME |
 #########################>
 [System.DateTime]::Now
 [System.DateTime]::UtcNow.ToString("o")

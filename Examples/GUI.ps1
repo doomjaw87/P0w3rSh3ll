@@ -9,7 +9,7 @@
 
 
 <#####################
-# WPF Dialog Windows #
+| WPF Dialog Windows |
 ######################
 
 It is easy to use WPF (Windows Presentation Foundation) to create and show simple
@@ -30,7 +30,7 @@ $window.ShowDialog() | Out-Null
 
 
 <###########################
-# WPF Message Box Function #
+| WPF Message Box Function |
 ###########################>
 Add-type -AssemblyName PresentationFramework
 function Show-d00mWpfMessageBox
@@ -63,7 +63,7 @@ If ($result -eq 'OK')
 
 
 <###########################
-# DISPLAYING MESSAGE BOXES #
+| DISPLAYING MESSAGE BOXES |
 ############################
 
 PowerShell can access all public .NET classes, so it is easy
@@ -113,7 +113,7 @@ Show-d00mMessageBox @params
 
 
 <##################################
-# FANCY INPUT BOXES AS PARAMETERS #
+| FANCY INPUT BOXES AS PARAMETERS |
 ###################################
 
 You can have fancy input boxes for parameter input in PowerShell Functions!
