@@ -90,3 +90,17 @@ Get-ZipCode -ZIP '12345'
 
 # This will be mad
 Get-ZipCode -ZIP '123456'
+
+
+
+<#####################
+| Most Popular Verbs |
+######################
+
+Let's explore which command verbs are most popular in PowerShell...
+
+#>
+
+Get-Command -CommandType Cmdlet, function |
+    Group-Object -Property Verb |
+    Sort-Object -Property Count -Descending
