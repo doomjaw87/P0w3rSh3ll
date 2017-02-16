@@ -55,3 +55,33 @@ Get-History |
 
     # Copy all to clipboard
     clip.exe
+
+
+
+<#########################
+| DETERMINING PERSON AGE |
+##########################
+
+How do you calculate the age of a person, based on a birthday? You can subtract the current time
+delivered by Get-Date from the birthday, but the result does not contain years:
+
+#>
+
+$birthday = Get-Date -Date '1987-10-16'
+$today = Get-Date
+$timedifference = $today - $birthday
+$timedifference
+
+<#
+
+To calculate the years, take the number of "ticks" (the smallest unit of time measurement), and
+convert it to a datetime, then take the year and subtract one:
+
+#>
+$birthdayString = '1987-10-16'
+$birthday = Get-Date -Date $birthdayString
+$today = Get-Date
+$timedifference = $today - $birthday
+$ticks = $timedifference.Ticks
+$age = (New-Object -TypeName DateTime -ArgumentList $ticks).Year - 1
+"Born on $birthdayString = $age years old (at time of printing)"
