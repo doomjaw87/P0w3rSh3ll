@@ -271,3 +271,128 @@ $speak.Speak('Hello world!')
 #   converter is a good example of a static class)
 # - Use "dynamic" members for functionality that may co-exist in more than one instance (so
 #   the user can instantiate as many independent objects as he/she may need)
+
+
+
+
+
+<##############################################
+| INHERITING CLASSES IN POWERSHELL 5 (part 1) |
+###############################################
+
+PowerShell 5 comes with built-in support for classes. You can use this new feature to enhance
+existing .NET classes. Here is an example: let's create an enhanced process class with
+additional functionality.
+
+Processes are typically represented by System.Diagnostics.Process objects. They have limited
+functionality, and for example provide no out-of-the-box way of gracefully closing an application.
+You can either kill it (losing unsaved data), or close it (the user can then abort the closing
+process).
+
+Here is a new class called AppInstance that inherits from System.Diagnostics.Process. So it gets
+all the functionality already present in the process class, yet you can add additional properties
+and methods:
+
+#>
+
+#requires -Version 5
+class AppInstance : System.Diagnostics.Process
+{
+    # constructor, being called when you instantiate a new object of this class
+    AppInstance([string]$Name) : base()
+    {
+        # launch the process, get a regular process object, and then
+        # enhance it with additional functionality
+        $this.StartInfo.FileName = $Name
+        $this.Start()
+        $this.WaitForInputIdle()
+    }
+
+    # for exampe, rename an existing method
+    [void]Stop()
+    {
+        $this.Kill()
+    }
+
+    # or invent new functionality
+    # Close() closes the window gracefully. Unlike Kill(),
+    # the user gets the chance to save unsaved work for
+    # a specified number of seconds before the process
+    # is killed
+    [void]Close([int]$Timeout=0)
+    {
+        # send close message
+        $this.CloseMainWindow()
+
+        # wait for success
+        if ($Timeout -gt 0)
+        {
+            $null = $this.WaitForExit($Timeout*1000)
+        }
+
+        # if process still runs (user aborted request), kill forcefully
+        if ($this.HasExited -eq $false)
+        {
+            $this.Stop()
+        }
+    }
+
+    # example of how to change a property like process priority
+    [void]SetPriority([System.Diagnostics.ProcessPriorityClass] $Priority)
+    {
+        $this.PriorityClass = $Priority
+    }
+
+    [System.Diagnostics.ProcessPriorityClass]GetPriority()
+    {
+        if ($this.HasExited -eq $false)
+        {
+            return $this.PriorityClass
+        }
+        else
+        {
+            throw "Process PID $($this.Id) does not run anymore."
+        }
+    }
+
+    # add static methods, for example a way to list all processes
+    # variant A: no arguments
+    static [System.Diagnostics.Process[]]GetAllProcesses()
+    {
+        return [AppInstance]::GetAllProcesses($false)
+    }
+    
+    # variant B: submit $false to see only processes that have a window
+    static [System.Diagnostics.Process[]]GetAllProcesses([bool]$All)
+    {
+        if ($All)
+        {
+            return Get-Process
+        }
+        else
+        {
+            return Get-Process | Where-Object {$_.MainWindowHandle -ne 0}
+        }
+    }
+}
+
+# you can always run static methods
+[AppInstance]::GetAllProcesses($true) | Out-GridView -Title 'All Processes'
+[AppInstance]::GetAllProcesses($false) | Out-GridView -Title 'Processes with Window'
+
+# this is how you instantiate a new process and get back
+# a new enhanced process object
+# class way:
+# $notepad = New-Object -TypeName AppInstance('notepad')
+# new (AND FASTER) way in PowerShell 5 to instantiate new objects:
+$notepad = [AppInstance]::new('notepad')
+
+# set a different process priority
+$notepad.SetPriority('BelowNormal')
+
+# add some text to the editor to see the close message
+Start-Sleep -Seconds 5
+
+# close the application and offer to save changes for a maximum
+# of 10 seconds
+$notepad.Close(10)
