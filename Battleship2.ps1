@@ -30,4 +30,20 @@ class Board
         }
         return $output.ToString()
     }
+    
+    Show()
+    {
+        $input = $this.Display()
+        foreach ($line in $input)
+        {
+            if ($line[0] -eq '-')
+            {
+                $line | Write-Host -BackgroundColor Black
+            }
+            else
+            {
+                $line | Write-Host -BackgroundColor Blue
+            }
+        }
+    }
 }
