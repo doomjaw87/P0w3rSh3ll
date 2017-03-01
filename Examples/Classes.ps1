@@ -396,3 +396,39 @@ Start-Sleep -Seconds 5
 # close the application and offer to save changes for a maximum
 # of 10 seconds
 $notepad.Close(10)
+
+
+
+
+
+
+<##############################################
+| INHERITING CLASSES IN POWERSHELL 5 (PART 2) |
+###############################################
+
+Here is another use case for the new class feature in PowerShell 5. In the previous example, we
+illustrated how you can derive new classes from System.Diagnostics.Process to get new and
+more powerful objects representing running processes.
+
+Here's a class that inherits from WebClient which is typically used to connect to websites. When
+you use the regular WebClient Object, it refuses to connect to HTTPS sites with certificate errors.
+That's a good thing, but sometimes you need to connect anyway.
+
+#>
+
+#requires -Version 5
+class MyWebClient : System.Net.WebClient
+{
+    MyWebClient() : base()
+    {
+        # with SSL certificate errors, connect anyway
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+        $proxy = [System.Net.WebRequest]::GetSystemWebProxy()
+        $proxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+        $this.Proxy = $proxy
+        $this.UseDefaultCredentials = $true
+        $this.Proxy.Credentials = $this.Credentials
+    }
+}
+$client = [mywebClient]::new()
+$client.DownloadString('http://www.psconf.eu')
