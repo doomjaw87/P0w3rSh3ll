@@ -116,3 +116,36 @@ $flags.HasFlag([BitFlags]::Option1)
 
 $flags.HasFlag([BitFlags]::Option2)
 #true
+
+
+
+<##############################
+| MANAGING BIT FLAGS (PART 3) |
+###############################
+
+Setting or clearing bit flags in a decimal is not particular hard but unintuitive. Here is a quick
+refresher showing how you can set and clear individual bits in a number:
+
+#>
+
+$decimal = 6254
+[convert]::ToString($decimal, 2)
+# 1100001101110
+
+# set bit 4
+$bit = 4
+$decimal = $decimal -bor [math]::Pow(2, $bit)
+[convert]::ToString($decimal, 2)
+# 1100001111110
+
+# set bit 0
+$bit = 0
+$decimal = $decimal -bor [math]::Pow(2, $bit)
+[convert]::ToString($decimal, 2)
+# 1100001111111
+
+# clear bit 1
+$bit = 1
+$decimal = $decimal -band -bnot [math]::Pow(2, $bit)
+[convert]::ToString($decimal, 2)
+# 1100001111101
