@@ -69,3 +69,26 @@ New-Object creates new instances of objects...
 
     # Or even shorter...
     [System.Net.NetworkInformation.Ping]::New().Send('google.com', 1000)
+
+
+
+
+<####################################
+| CREATING OBJECT ARRAYS ON THE FLY |
+#####################################
+
+Here is a quick code sample that generates an array of objects using the built-in CSV-parser:
+
+#>
+
+$csv = @'
+PC82012,2017-02-28
+PC82038,2017-02-28
+PC83073,2017-02-28
+PC84004,2017-02-28
+PC84009,2017-02-28
+PC84015,2017-02-28
+PC90435,2017-02-28
+'@
+$data = $csv | ConvertFrom-Csv
+$data | Out-GridView

@@ -149,3 +149,33 @@ $bit = 1
 $decimal = $decimal -band -bnot [math]::Pow(2, $bit)
 [convert]::ToString($decimal, 2)
 # 1100001111101
+
+
+
+<############################
+| MANAGING BIT FLAGS (pt 4) |
+#############################
+
+In PowerShell 5, the new support for enums makes dealing with bit values much easier as
+you've seen in previous tips. Even setting or clearing bits no longer requires cumbersome logical
+operators anymore.
+
+Let's first define an enum and make the decimal more manageable:
+
+#>
+
+#requires -Version 5
+[flags()]
+enum GardenPartyItems
+{
+    Chair = 0
+    Table = 1
+    Barbecue = 2
+    Fridge = 4
+    Candle = 8
+    Knife = 16
+}
+$decimal = 11
+[GardenPartyItems]$flags = $decimal
+$flags
+# Table, Barbecue, Candle
