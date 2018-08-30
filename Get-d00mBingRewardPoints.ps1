@@ -1,5 +1,6 @@
 ﻿function Get-d00mBingRewardPoints
 {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Add-Type -AssemblyName System.Web | Out-Null
     try
     {
