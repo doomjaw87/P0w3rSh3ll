@@ -10,12 +10,18 @@ catch
 describe "d00m Storage Account Creation Testing" {
     context "Validating ARM template..." {
         It "ARM Template should be valid" {
-            $result = Test-AzureRmResourceGroupDeployment -ResourceGroupName 'testing' -TemplateFile .\d00mstorageaccount.json -storageAccountName 'd00mstorageaccount'
+            $params = @{ResourceGroupName  = 'testing'
+                        TemplateFile       = 'G:\My Drive\git\P0w3rSh3ll\New-d00mAzureStorageAccount\d00mstorageaccount.json'
+                        StorageAccountName = 'd00mstorageaccount1'}
+            $result = Test-AzureRmResourceGroupDeployment @params
             $result | Should -BeNullOrEmpty
         }
 
         It "Should throw with invalid storage account name" {
-            $result = Test-AzureRmResourceGroupDeployment -ResourceGroupName 'testing' -TemplateFile .\d00mstorageaccount.json -storageAccountName '!@#$%^&^'
+            $params = @{ResourceGroupName  = 'testing'
+                        TemplateFile       = 'G:\My Drive\git\P0w3rSh3ll\New-d00mAzureStorageAccount\d00mstorageaccount.json'
+                        StorageAccountName = '@!##@%$%@#$%^@'}
+            $result = Test-AzureRmResourceGroupDeployment @params
             $result | Should -Not -BeNullOrEmpty
         }
     }
