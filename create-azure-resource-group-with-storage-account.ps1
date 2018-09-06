@@ -18,7 +18,7 @@
                 Kind              = 'StorageV2'
                 Tags              = $tags
                 AsJob             = $true}
-    New-AzureRmStorageAccount @params
+    #New-AzureRmStorageAccount @params
 
     $params = @{ResourceGroupName = "rg$guid"
                 Name              = "pip$guid"
@@ -29,11 +29,11 @@
                 DomainNameLabel   = "dns$($guid)"
                 Tag               = $tags
                 AsJob             = $true}
-    New-AzureRmPublicIpAddress @params
+    #New-AzureRmPublicIpAddress @params
 
     $params = @{Name = 'subnet1'
                 AddressPrefix = '1.0.0.0/24'}
-    $subnet = New-AzureRmVirtualNetworkSubnetConfig @params
+    #$subnet = New-AzureRmVirtualNetworkSubnetConfig @params
 
     $params = @{ResourceGroupName = "rg$guid"
                 Location          = 'West US'
@@ -43,5 +43,16 @@
                 Subnet            = $subnet
                 Tag               = $tags
                 AsJob             = $true}
-    $vnet = New-AzureRmVirtualNetwork @params
+    #$vnet = New-AzureRmVirtualNetwork @params
+
+    $params = @{ResourceGroupName = "rg$guid"
+                Location          = 'West US'
+                Name              = $guid
+                Image             = 'microsoft/iis:nanoserver'
+                OsType            = 'Windows'
+                DnsNameLabel      = $guid
+                Cpu               = 1
+                MemoryInGB        = 1
+                Tag               = $tags}
+    $container = New-AzureRmContainerGroup @params
 }

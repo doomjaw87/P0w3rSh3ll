@@ -39,3 +39,11 @@ $body = @{Month = '6'
           Year  = '2012'
           Which = 'Hers'}
 Invoke-RestMethod -Uri $uri -Method Get -Body $body
+
+$body = @{Month = '12'
+          Day   = '30'
+          Year  = '1980'
+          Which = 'His'}
+Invoke-RestMethod -Uri $uri -Method Get -Body $body
+
+Invoke-RestMethod -Uri 'https://d00mfunction.azurewebsites.net/api/d00mFreeChampion'
